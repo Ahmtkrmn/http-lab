@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # 1. Kendi Yazdığımız Node.js Uygulaması
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: http-lab-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    # Uygulama içindeki veritabanı URL'sini Docker ağına (localhost yerine 'db' servisine) yönlendiriyoruz
+    environment:
+      - DATABASE_URL=postgresql://postgres:Trabzon.4002@localhost:5432/http_lab_db
+
+  # 2. PostgreSQL Veritabanı
+  db:
+    image: postgres:15-alpine
+    container_name: http-lab-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Trabzon.4002
+      POSTGRES_DB: http_lab_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data # Named volume: Container silinse bile veriler kalıcı olur
+
+  # 3. Veritabanı Yönetim Arayüzü (Geliştirme için)
+  adminer:
+    image: adminer
+    container_name: http-lab-adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+# Docker tarafından yönetilecek kalıcı disk alanları
+volumes:
+  pgdata:

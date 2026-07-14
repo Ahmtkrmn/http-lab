@@ -223,6 +223,46 @@ Testler ayrı bir `http_lab_test` veritabanı kullanır (`.env.test`); her test
 öncesi `tests/testUtils/resetDb.js` ile tablolar temizlenir, böylece testler
 birbirinden bağımsız ve tekrarlanabilir çalışır.
 
+### Testleri Çalıştırmadan Önce (Kurulum)
+
+1. `npm install` çalıştırın — bu, `postinstall` script'i sayesinde
+   `npx prisma generate`'i otomatik tetikler. Eğer ağ/proxy kısıtlaması
+   yüzünden bu adım başarısız olursa, elle çalıştırın:
+   ```bash
+   npx prisma generate
+   ```
+2. `.env.test.example` dosyasını `.env.test` olarak kopyalayın ve
+   `DATABASE_URL`'i gerçek, boş bir test veritabanına işaret edecek şekilde
+   düzenleyin (varsayılan: `http_lab_test`).
+3. O veritabanını (henüz yoksa) oluşturun:
+   ```bash
+   createdb http_lab_test   # ya da: psql -c "CREATE DATABASE http_lab_test;"
+   ```
+4. `npm test` çalıştırın.
+
+**Migration'ları elle uygulamanıza gerek yok**: `package.json`'daki
+`pretest` script'i (`npm run db:migrate:test`), `npm test` / `npm run
+test:coverage` her çalıştığında `.env.test`'teki `DATABASE_URL`'e
+`prisma migrate deploy`'u otomatik uygular. Bunu elle tetiklemek isterseniz:
+```bash
+npm run db:migrate:test
+```
+
+> ⚠️ **Sık yapılan hata**: `npx prisma migrate deploy`'u DOĞRUDAN (dotenv-cli
+> olmadan) çalıştırırsanız, Prisma CLI varsayılan olarak `.env` dosyasını
+> okur — `.env.test`'i DEĞİL. Bu durumda migration'lar yanlışlıkla
+> geliştirme veritabanınıza (`http_lab_db`) uygulanır ve test veritabanınız
+> (`http_lab_test`) boş kalır; testler
+> `"The table 'public.Item' does not exist in the current database"`
+> hatasıyla çöker. Bu yüzden proje artık `dotenv-cli` kullanarak doğru
+> ortam dosyasını açıkça belirtiyor (`db:migrate:test` script'ine bakın) ve
+> bu adımı `pretest` ile otomatikleştiriyor — elle bu hatayı yapmanız
+> artık mümkün değil.
+
+`.env.test` bulunamazsa `tests/jest.setup.js`, "secretOrPrivateKey must have
+a value" gibi anlaşılması güç hatalar yerine yukarıdaki adımları özetleyen
+açık bir hata mesajı fırlatır.
+
 ### Çalıştırma
 
 ```bash
@@ -285,6 +325,27 @@ davranışsal olarak önemsiz satırlardır.
   bulundu ve düzeltildi: `user.connect` yanlışlıkla `category` objesinin
   içine gömülmüştü ve her `POST /api/items` isteğinde 500 hatasına yol
   açıyordu (ayrıntı için `REFACTORING_DIARY.md`).
+- **Sonradan düzeltilen paketleme hatası**: Teslim edilen ilk zip'te
+  `.env`/`.env.test` (içlerinde sır olduğu için) hariç tutulmuştu, ama
+  yerlerine `.env.test.example` konmamıştı ve `package.json`'da
+  `postinstall: prisma generate` script'i yoktu. Sonuç: `npm install`
+  sonrası `@prisma/client` üretilmemiş oluyor (integration test suite'leri
+  hiç yüklenemiyordu) ve `.env.test` yokluğunda `JWT_ACCESS_SECRET`
+  `undefined` kalarak unit testlerin yarısı da "secretOrPrivateKey must
+  have a value" hatasıyla çöküyordu — kullanıcının bildirdiği "testlerin
+  yarısı geçmiyor" şikayetinin sebebi buydu. Artık `.env.test.example`
+  eklendi, `postinstall` script'i eklendi ve `.env.test` eksikse
+  `tests/jest.setup.js` açıklayıcı bir hata fırlatıyor.
+- **İkinci tur düzeltme — test DB'sine migration uygulanmamış olması**:
+  Kullanıcı ortamında `.env.test` doğru oluşturulmuştu ama testler
+  `"The table 'public.Item' does not exist in the current database"`
+  hatasıyla çöktü. Kök neden: `npx prisma migrate deploy`'un varsayılan
+  olarak `.env` dosyasını okuması, `.env.test`'i değil — yani migration'lar
+  yanlış (geliştirme) veritabanına uygulanmış, test veritabanı boş
+  kalmıştı. Çözüm: `dotenv-cli` devDependency olarak eklendi,
+  `db:migrate:test` script'i `.env.test`'i açıkça hedefleyecek şekilde
+  yazıldı ve `pretest`/`pretest:coverage` ile `npm test` her çalıştığında
+  bu migration otomatik uygulanacak şekilde bağlandı.
 
 ## Postman Koleksiyonu
 

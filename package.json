@@ -4,12 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test": "jest --runInBand",
+    "db:migrate:test": "dotenv -e .env.test -- npx prisma migrate deploy",
+    "pretest": "npm run db:migrate:test",
+    "test": "jest --runInBand --forceExit",
     "test:unit": "jest --runInBand tests/unit",
-    "test:integration": "jest --runInBand tests/integration",
-    "test:coverage": "jest --runInBand --coverage"
+    "test:integration": "jest --runInBand --forceExit tests/integration",
+    "test:coverage": "jest --runInBand --forceExit --coverage",
+    "pretest:coverage": "npm run db:migrate:test"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +31,7 @@
     "prisma": "^7.8.0"
   },
   "devDependencies": {
+    "dotenv-cli": "^11.0.0",
     "jest": "^30.4.2",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
