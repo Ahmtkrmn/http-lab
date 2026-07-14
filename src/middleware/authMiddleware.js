@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const { verifyAccessToken } = require('../utils/tokenService');
 
 // 1. Kapı: Token geçerli mi? (Authentication)
 const authenticateToken = (req, res, next) => {
@@ -10,16 +10,16 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: 'Erişim reddedildi. Token bulunamadı.' });
   }
 
-  // Token'ı gizli anahtarımızla açıp içindeki bilgileri (userId, role) okuyoruz
-  jwt.verify(token, process.env.JWT_ACCESS_SECRET, (err, user) => {
-    if (err) {
-      // Görev 4: Expired token kontrolü burada otomatik yapılır (jwt.verify hata fırlatır)
-      return res.status(403).json({ error: 'Geçersiz veya süresi dolmuş token.' });
-    }
-    
+  try {
+    // Token doğrulama mantığı artık tokenService içinde (SRP).
+    // Görev: Expired token kontrolü verifyAccessToken içindeki
+    // jwt.verify tarafından otomatik yapılır ve hata fırlatılır.
+    const user = verifyAccessToken(token);
     req.user = user; // Kullanıcı bilgilerini diğer fonksiyonlar okuyabilsin diye req içine koyuyoruz
     next();
-  });
+  } catch (err) {
+    return res.status(403).json({ error: 'Geçersiz veya süresi dolmuş token.' });
+  }
 };
 
 // 2. Kapı: Yetkisi yetiyor mu? (RBAC - Authorization)

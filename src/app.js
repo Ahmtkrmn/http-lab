@@ -1,5 +1,5 @@
 // Load environment variables from the .env file into process.env
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
 // Import Express framework
 const express = require('express');
@@ -12,11 +12,17 @@ const errorHandler = require('./middleware/errorHandler');
 const itemsRouter = require('./routes/items');
 const authRouter = require('./routes/auth');
 
+// SOLID / SRP notu:
+// Refactor öncesinde bu dosya hem "Express uygulamasını inşa et" hem de
+// "sunucuyu belirli bir portta dinlemeye başlat" sorumluluklarını aynı anda
+// taşıyordu (dosyanın en altında app.listen(...) çağrısı vardı). Bu, dosyanın
+// import edilmesinin OTOMATİK olarak gerçek bir ağ portu açması anlamına
+// geliyordu — bu da Supertest gibi araçlarla in-process (portsuz) HTTP
+// testi yazmayı imkansız hale getiriyordu. Artık bu dosya SADECE app'i
+// inşa edip dışa aktarıyor; sunucuyu başlatma sorumluluğu server.js'e ait.
+
 // Initialize the Express application
 const app = express();
-
-// Determine the port from environment variables, fallback to 3000 if not provided
-const PORT = process.env.PORT || 3000;
 
 // 1. Built-in Middleware: Parse incoming JSON payloads
 // This MUST come before our routes so that req.body is populated
@@ -53,7 +59,4 @@ app.use((req, res) => {
 // Catches any errors passed via next(err) from previous handlers
 app.use(errorHandler);
 
-// Start the server and listen for incoming connections on the specified port
-app.listen(PORT, () => {
-  console.log(`[SYSTEM] Server is running successfully on http://localhost:${PORT}`);
-});
+module.exports = app;

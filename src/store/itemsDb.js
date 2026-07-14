@@ -1,19 +1,11 @@
-require('dotenv').config();
-const { Pool } = require('pg');
-const { PrismaPg } = require('@prisma/adapter-pg');
-const { PrismaClient } = require('@prisma/client');
+require('dotenv').config({ quiet: true });
+// SOLID / DIP notu: Bu dosya artık kendi Pool/PrismaClient'ını üretmiyor.
+// Uygulama genelinde tek bir bağlantı için src/db/prisma.js'teki paylaşılan
+// singleton'ı kullanıyor (bkz. o dosyadaki DIP açıklaması).
+const { getPrismaClient } = require('../db/prisma');
 
-// Prisma 7 Standart Bağlantı Kurulumu
-const connectionString = process.env.DATABASE_URL;
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-// const prisma = new PrismaClient({ adapter });
+const prisma = getPrismaClient();
 
-// YENİ HALİ:
-const prisma = new PrismaClient({
-  adapter,
-  log: ['query'],
-})
 const itemsDb = {
   // Tüm ürünleri kategorileriyle birlikte getir (Eager Loading)
   findAll: async () => {
@@ -33,6 +25,13 @@ const itemsDb = {
 
   // Yeni ürün oluştur
   create: async (data) => {
+    // BUG FIX: `user: { connect: ... }` daha önce yanlışlıkla `category`
+    // objesinin İÇİNE yazılmıştı. Prisma "category" ilişkisi için "user"
+    // adında bir alanı tanımadığından bu, her POST isteğinde
+    // "Unknown argument `user`" hatasıyla 500 dönmesine sebep oluyordu.
+    // Bu regresyon, entegrasyon testleri (POST /api/items) yazılırken
+    // ortaya çıkarıldı. `user` ilişkisi artık `data`'nın kendi seviyesinde,
+    // `category` ile kardeş bir alan olarak doğru şekilde kuruluyor.
     return prisma.item.create({
       data: {
         name: data.name,
@@ -41,9 +40,9 @@ const itemsDb = {
         // Dikkat: categoryId'yi doğrudan yazmak yerine 'connect' kullanıyoruz
         category: {
           connect: { id: parseInt(data.categoryId) },
-          //ürünü oluşturan kişinin ID'sini tokendan (req.user.userId) alıp veritabanına işliyoruz!
-          ...(data.userId && { user: { connect: { id: parseInt(data.userId) } } })
         },
+        // Ürünü oluşturan kişinin ID'sini tokendan (req.user.userId) alıp veritabanına işliyoruz!
+        ...(data.userId && { user: { connect: { id: parseInt(data.userId) } } }),
       },
       include: { category: true },
     });
