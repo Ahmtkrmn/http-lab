@@ -12,11 +12,13 @@ services:
       - "3000:3000"
     depends_on:
       - db
+    # DATABASE_URL artık SADECE .env dosyasından okunuyor (bkz. LEARNING_LOG.md).
+    # Not: .env içindeki DATABASE_URL host adı olarak 'db' kullanmalı (Docker
+    # servis adı), 'localhost' değil — container'ın kendi içinde 'localhost'
+    # PostgreSQL'in çalıştığı 'db' container'ını değil, 'app' container'ının
+    # kendisini işaret eder.
     env_file:
       - .env
-    # Uygulama içindeki veritabanı URL'sini Docker ağına (localhost yerine 'db' servisine) yönlendiriyoruz
-    environment:
-      - DATABASE_URL=postgresql://postgres:Trabzon.4002@localhost:5432/http_lab_db
 
   # 2. PostgreSQL Veritabanı
   db:
@@ -27,8 +29,10 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: Trabzon.4002
       POSTGRES_DB: http_lab_db
-    ports:
-      - "5432:5432"
+    # Host'a port açmıyoruz: veritabanına sadece Docker'ın iç ağındaki
+    # (aynı docker-compose ağındaki) servisler ('app', 'adminer') erişebilir.
+    # Production'da veritabanı portunun dışarıya (host makineye/internete)
+    # açık olması gereksiz bir saldırı yüzeyi yaratır.
     volumes:
       - pgdata:/var/lib/postgresql/data # Named volume: Container silinse bile veriler kalıcı olur
 
