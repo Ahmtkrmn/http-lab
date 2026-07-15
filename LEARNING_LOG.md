@@ -287,3 +287,31 @@ araçla (`docker compose`/`services:`) çözüyoruz.
 Bu iki adım tamamlanmadan `ci.yml` GitHub'a push'lanıp bir PR açılana kadar
 gerçekten çalışıp çalışmadığını göremeyiz — bir sonraki adım bunu push edip
 gözlemlemek olabilir.
+
+### 4. Doğrulama — ilk gerçek CI çalıştırması
+
+**Yapılan Değişiklik:** Kod değişikliği yok — `main`'e commit push edilip
+GitHub Actions API'sinden sonuç gözlemlendi.
+
+**Sonuç:** Üç job da (`lint`, `test`, `build`) **ilk denemede** başarılı oldu
+(bkz. [run #1](https://github.com/Ahmtkrmn/http-lab/actions/runs/29411237150)).
+`test` job'unun geçmesi, `TEST_DATABASE_URL` secret'ının repo'da zaten doğru
+tanımlı olduğunu kanıtladı (secret eksik/boş olsaydı `.env.test`'e boş bir
+`DATABASE_URL` yazılır, `pretest` adımındaki `prisma migrate deploy` bağlantı
+hatasıyla çökerdi — yani bu adım "sessizce doğru" değil, "test edilerek
+doğrulanmış" bir sonuç).
+
+**Beklenmedik bulgu:** `git push` sırasında GitHub şu uyarıyı verdi:
+`Bypassed rule violations for refs/heads/main: Changes must be made through
+a pull request.` Yani `main` için PR-zorunluluğu içeren bir branch protection
+kuralı ZATEN varmış, ama repo admini (bu hesap) bu kuralı bypass edebiliyor
+ve kural "status checks zorunlu olsun" ayarını içermiyor gibi görünüyor
+(aksi halde CI tamamlanmadan push reddedilirdi).
+
+**Mentör Notu:** Bir güvenlik/süreç kontrolünün "var olması" ile "gerçekten
+uygulanması" aynı şey değildir. Branch protection kuralı GitHub'da
+tanımlıyken bile, repo sahibinin varsayılan olarak onu bypass edebilmesi
+(admin bypass) kuralı fiilen gönüllü hale getirir. Gerçekten "main'e
+doğrudan push imkansız" istiyorsan, kuralda ayrıca "Do not allow bypassing
+the above settings" seçeneğini de işaretlemen gerekir — bu, GitHub'ın kendi
+UI'ında kolayca gözden kaçan, ama davranışı tamamen değiştiren bir detaydır.

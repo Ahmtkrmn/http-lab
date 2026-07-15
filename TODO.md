@@ -91,8 +91,8 @@ Bu maddeler küçük ama production'da fark yaratır. Haftaya geçmeden önce ka
   - `DATABASE_URL`'i GitHub Secrets'tan al (`${{ secrets.TEST_DATABASE_URL }}`)
 - [x] **`build` job'u:** Docker image'ı build et, hata yoksa geç
 - [x] Üç job paralel çalışsın, hepsi geçmeden merge edilemesin *(job'lar arasında `needs:` yok, hepsi bağımsız/paralel)*
-- [ ] Branch protection rule'u GitHub'da aktif et: `main`'e doğrudan push yasak — **senin yapman gerekiyor** (GitHub repo Settings → Branches → Add rule; benim dosya düzenlemelerimle yapılamaz, repo ayarı)
-- [ ] **Senin yapman gereken ek adım:** GitHub repo'da Settings → Secrets and variables → Actions → "New repository secret" ile `TEST_DATABASE_URL` adında bir secret ekle. Değeri: `postgresql://postgres:postgres@localhost:5432/http_lab_test` (workflow'daki `postgres` servis container'ının kullanıcı/şifre/db adıyla birebir eşleşmeli).
+- [x] `TEST_DATABASE_URL` secret'ı eklendi — CI `test` job'u ilk push'ta gerçek DB'ye karşı geçti (bkz. run [#1](https://github.com/Ahmtkrmn/http-lab/actions/runs/29411237150)).
+- [ ] Branch protection rule'u GitHub'da aktif et: `main`'e doğrudan push yasak. **Kısmen var** — `main` push'ta GitHub "Bypassed rule violations: Changes must be made through a pull request" uyarısı verdi (yani bir PR-zorunluluğu kuralı zaten tanımlı), ama admin olarak bypass edilebildi ve "Require status checks to pass" henüz aktif değil gibi görünüyor (aksi halde CI bitmeden push reddedilirdi). **Senin yapman gereken:** Settings → Branches → `main` kuralını düzenle → "Require status checks to pass before merging" işaretle, `lint`/`test`/`build`'i zorunlu kıl; istersen "Do not allow bypassing the above settings"ı da işaretleyerek adminlerin de bypass edememesini sağla.
 
 ### GitHub Actions — CD Pipeline
 
