@@ -12,21 +12,32 @@ jobs:
 
     steps:
       - name: Trigger Render Deployment
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
           echo "Tetikleyici Render'a gönderiliyor..."
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+          # -f (--fail): Render 4xx/5xx dönerse curl exit code'u 0 DEĞİL,
+          # sıfırdan farklı olsun ki bu adım gerçekten başarısız olsun.
+          # Bu olmadan (eski hali), hook URL'i yanlış veya süresi dolmuş
+          # olsa bile bu adım "başarılı" görünür ve smoke test'e geçilirdi
+          # — deploy hiç tetiklenmemiş olsa bile.
+          curl -sf -X POST "$RENDER_DEPLOY_HOOK"
 
       - name: Wait and Smoke Test (/health)
+        env:
+          # Değer öncelik sırası: repo'da tanımlıysa Settings → Secrets and
+          # variables → Actions → Variables → RENDER_SERVICE_URL; tanımlı
+          # değilse şu anki bilinen adrese düşer. Böylece URL'i workflow
+          # dosyasını düzenlemeden değiştirebiliyoruz.
+          RENDER_URL: ${{ vars.RENDER_SERVICE_URL || 'https://http-lab.onrender.com' }}
         run: |
           echo "Render'ın Docker imajını oluşturup ayağa kaldırması için 60 saniye bekleniyor..."
           sleep 60
-          
-          echo "Nabız kontrolü (Smoke Test) başlıyor..."
-          # Not: URL kısmına kendi Render uygulamanın tam web adresini yazmalısın.
-          RENDER_URL="https://http-lab.onrender.com/health"
-          
+
+          echo "Nabız kontrolü (Smoke Test) başlıyor: ${RENDER_URL}/health"
+
           for i in {1..12}; do
-            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" $RENDER_URL || echo "000")
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "${RENDER_URL}/health" || echo "000")
             if [ "$RESPONSE" = "200" ]; then
               echo "✅ Duman testi başarılı! Sistem 200 OK yanıtı verdi."
               exit 0
@@ -34,6 +45,6 @@ jobs:
             echo "⏱️ Sistem henüz hazır değil (Yanıt: $RESPONSE). 15 saniye sonra tekrar deneniyor... ($i/12)"
             sleep 15
           done
-          
+
           echo "❌ HATA: Smoke test başarısız oldu. Uygulama ayağa kalkamadı."
           exit 1
