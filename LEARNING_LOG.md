@@ -315,3 +315,57 @@ tanımlıyken bile, repo sahibinin varsayılan olarak onu bypass edebilmesi
 doğrudan push imkansız" istiyorsan, kuralda ayrıca "Do not allow bypassing
 the above settings" seçeneğini de işaretlemen gerekir — bu, GitHub'ın kendi
 UI'ında kolayca gözden kaçan, ama davranışı tamamen değiştiren bir detaydır.
+
+---
+
+## Adım 4 — CD Pipeline (Render) test edildi ve sertleştirildi
+
+**Tarih:** 2026-07-15
+
+**Yapılan Değişiklik:** Sen `.github/workflows/deploy.yml`'i hazırladın
+(Render Deploy Hook'u tetikleyip 60 saniye bekleyen, sonra `/health`'i
+15 saniye aralıklarla 12 kez yoklayan bir job), `feature/cd-pipeline`
+branch'inden bir PR açıp `main`'e merge ettin. Ben bunu bağımsız olarak
+doğruladım:
+- GitHub Actions API'sinden hem `CI` hem `CD Pipeline - Deploy to Render`
+  workflow'larının merge sonrası otomatik tetiklendiğini ve ikisinin de
+  `success` ile tamamlandığını gördüm.
+- Canlı URL'e (`https://http-lab.onrender.com`) kendim `curl` attım:
+  `/health` → `200` + `db: "connected"`, `/api/items` (token'sız) → `401`
+  (auth middleware production'da da doğru çalışıyor), `/` → `404` (beklenen).
+
+Sonrasında `deploy.yml`'de iki dayanıklılık (resilience) düzeltmesi yaptım:
+1. `curl -X POST` → `curl -sf -X POST`: `-f` olmadan, Render deploy hook'u
+   4xx/5xx dönse bile (örn. hook URL'i geçersizleşmiş, Render tarafı
+   düşükse) `curl`'ün kendisi exit code 0 ile döner — adım "başarılı"
+   görünür ama deploy aslında hiç tetiklenmemiştir. `-f` bu durumu gerçek
+   bir job hatasına çevirir.
+2. Hardcoded `RENDER_URL="https://http-lab.onrender.com/health"` →
+   `${{ vars.RENDER_SERVICE_URL || 'https://http-lab.onrender.com' }}`:
+   URL artık bir repository variable'dan (Settings → Secrets and variables
+   → Actions → Variables) okunuyor, tanımlı değilse aynı adrese düşüyor.
+   Servis adı/URL'i değiştirirse workflow dosyasına dokunmadan
+   güncelleyebilecek.
+   İkisini de `env:` bloğuna taşıdım (`run:` gövdesinde `${{ }}` doğrudan
+   metne gömülü değil) — bu, secrets/vars'ı shell komutunun İÇİNE
+   literal olarak enjekte etmemenin standart pratiği.
+
+**Mimari Karar:** "Çalışıyor" ile "doğru" aynı şey değil. Workflow zaten
+`success` dönmüştü ama bu, `curl`'ün her zaman doğru şekilde başarısız
+olacağını GARANTİ ETMİYORDU — sadece BU SEFER hook URL'i doğru olduğu için
+gerçekten tetiklendi. Bir CI/CD pipeline'ını "bir kere yeşil geçti" diye
+güvenilir saymak yanlış bir güven duygusudur; asıl soru "yanlış giden bir
+şey olduğunda pipeline bunu YAKALAR mı?" sorusudur. `curl -f` eklemeden
+önce, hook URL'i kazayla silinmiş/yanlış yazılmış olsaydı bu workflow YİNE
+"başarılı" görünüp deploy'un hiç olmadığını gizlerdi.
+
+**Mentör Notu:** Bir shell script'te dış bir komutun (`curl`, `git`, `npm`)
+"başarısız" sayılıp sayılmayacağı, komutun KENDİ exit code'una bağlıdır —
+`curl` varsayılan olarak HTTP durum kodundan (404, 500 vb.) BAĞIMSIZ olarak
+0 döner, çünkü "isteği gönderebildim" ile "sunucu iyi bir yanıt verdi" onun
+için farklı şeylerdir. CI/CD script'lerinde bu ayrımı hep sorgula: "bu satır
+gerçekten başarısız olursa job kırmızı olur mu, yoksa sessizce mi geçer?"
+`set -e` (bash'in "herhangi bir komut başarısız olursa dur" modu) GitHub
+Actions'ın `run:` bloklarında varsayılan olarak zaten açıktır, ama `curl`
+gibi araçların "başarı" tanımını senin niyetinle eşleştirmek (`-f` bayrağı
+gibi) ayrı bir sorumluluktur — `set -e` bunu senin yerine yapmaz.

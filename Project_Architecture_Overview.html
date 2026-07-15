@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>http-lab — Proje Mimarisi ve Teknoloji Envanteri</title>
+<style>
+  :root {
+    --paper: #fbfcfc;
+    --paper-alt: #eef4f3;
+    --ink: #10181a;
+    --muted: #4d6360;
+    --line: #d7e3e1;
+    --accent: #0f6e6a;
+    --accent-soft: #e2f3f1;
+    --accent-ink: #06201d;
+    --good: #1a7f4f;
+    --warn: #92660a;
+    --danger: #b3261e;
+    --code-bg: #eef4f3;
+    --stripe: #f3f8f7;
+    --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Liberation Mono", monospace;
+    --font-body: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Segoe UI", serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0a1312;
+      --paper-alt: #101c1b;
+      --ink: #e6efed;
+      --muted: #8fa8a4;
+      --line: #1f3634;
+      --accent: #4fd1c5;
+      --accent-soft: #10302d;
+      --accent-ink: #d7fbf6;
+      --good: #3ecf8e;
+      --warn: #dba43c;
+      --danger: #f2726b;
+      --code-bg: #0e1a19;
+      --stripe: #0e1a19;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0a1312;
+    --paper-alt: #101c1b;
+    --ink: #e6efed;
+    --muted: #8fa8a4;
+    --line: #1f3634;
+    --accent: #4fd1c5;
+    --accent-soft: #10302d;
+    --accent-ink: #d7fbf6;
+    --good: #3ecf8e;
+    --warn: #dba43c;
+    --danger: #f2726b;
+    --code-bg: #0e1a19;
+    --stripe: #0e1a19;
+  }
+  :root[data-theme="light"] {
+    --paper: #fbfcfc;
+    --paper-alt: #eef4f3;
+    --ink: #10181a;
+    --muted: #4d6360;
+    --line: #d7e3e1;
+    --accent: #0f6e6a;
+    --accent-soft: #e2f3f1;
+    --accent-ink: #06201d;
+    --good: #1a7f4f;
+    --warn: #92660a;
+    --danger: #b3261e;
+    --code-bg: #eef4f3;
+    --stripe: #f3f8f7;
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: light dark; }
+  body {
+    font-family: var(--font-body);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.65;
+    margin: 0;
+    padding: 0 0 5rem 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  header.masthead {
+    border-bottom: 1px solid var(--line);
+    padding: 2.75rem 0 1.75rem 0;
+    margin-bottom: 2.5rem;
+  }
+  header.masthead .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.9rem 0;
+  }
+  header.masthead h1 {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 1.7rem;
+    line-height: 1.35;
+    margin: 0 0 0.6rem 0;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  header.masthead p.subtitle {
+    margin: 0 0 1.25rem 0;
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 62ch;
+  }
+  .stack-strip {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.6rem;
+  }
+  .stack-strip span:not(:last-child)::after {
+    content: "·";
+    margin-left: 0.6rem;
+    color: var(--line);
+  }
+
+  nav.toc {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.5rem;
+    margin-bottom: 3rem;
+  }
+  nav.toc h2 {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  nav.toc ol {
+    margin: 0.6rem 0 0 0;
+    padding-left: 1.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+  nav.toc li { margin-bottom: 0.25rem; }
+  nav.toc a { text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  section { margin-bottom: 3.25rem; }
+  h2 {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.6rem;
+    margin: 0 0 1.25rem 0;
+    text-wrap: balance;
+  }
+  h2 .num {
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    margin-right: 0.35rem;
+  }
+  h3 {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 2.25rem 0 0.9rem 0;
+    color: var(--ink);
+  }
+  p { color: var(--ink); max-width: 68ch; }
+  p.wide { max-width: none; }
+
+  .table-wrap { overflow-x: auto; margin: 1rem 0 1.75rem 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    min-width: 560px;
+  }
+  caption {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.6rem;
+    color: var(--accent);
+  }
+  th, td {
+    border-bottom: 1px solid var(--line);
+    padding: 0.65rem 0.9rem 0.65rem 0;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 600;
+    border-bottom: 1px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody tr:hover { background: var(--stripe); }
+
+  code, .path {
+    font-family: var(--font-mono);
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0.05rem 0.35rem;
+    font-size: 0.87em;
+    white-space: nowrap;
+    color: var(--ink);
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 1.1rem 1.3rem;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+  pre code { background: none; border: none; padding: 0; white-space: pre; }
+
+  .pipeline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.5rem;
+    margin: 1.25rem 0;
+    font-family: var(--font-mono);
+  }
+  .pipeline .step {
+    background: var(--paper-alt);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.8rem;
+  }
+  .pipeline .step b { display: block; font-weight: 600; }
+  .pipeline .step small { color: var(--muted); font-size: 0.75rem; }
+  .pipeline .arrow {
+    color: var(--accent);
+    font-size: 1rem;
+    align-self: center;
+  }
+
+  dl.decisions {
+    display: grid;
+    grid-template-columns: minmax(180px, 220px) 1fr;
+    gap: 0.75rem 1.5rem;
+    margin: 1.25rem 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+  }
+  dl.decisions dt {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--accent);
+  }
+  dl.decisions dd {
+    margin: 0 0 0.9rem 0;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+  dl.decisions dd:last-of-type { border-bottom: none; }
+
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 1rem 1.3rem;
+    margin: 1.25rem 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--warn); background: transparent; border: 1px solid var(--line); border-left: 3px solid var(--warn); }
+  .callout strong {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    color: var(--ink);
+  }
+
+  footer {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  footer code { white-space: normal; }
+
+  @media (max-width: 640px) {
+    dl.decisions { grid-template-columns: 1fr; }
+    dl.decisions dt { margin-bottom: -0.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Teknik Referans · http-lab</p>
+  <h1>Proje Mimarisi ve Teknoloji Envanteri</h1>
+  <p class="subtitle">Express 5 + Prisma 7 + PostgreSQL üzerine kurulu, JWT/RBAC destekli, CI/CD ile Render'a otomatik deploy edilen bir REST API'nin yığın, mimari ve veri akışı dökümü.</p>
+  <p class="stack-strip">
+    <span>Node.js 20/24</span><span>Express 5.2.1</span><span>Prisma 7.8.0</span><span>PostgreSQL 15</span><span>Docker</span><span>GitHub Actions</span><span>Render — canlı</span>
+  </p>
+</header>
+
+<nav class="toc">
+  <h2>İçindekiler</h2>
+  <ol>
+    <li><a href="#tech-stack">Teknoloji Yığını (Tech Stack)</a></li>
+    <li><a href="#architecture">Mimari Yapı</a></li>
+    <li><a href="#usage">Somut Kullanım Örnekleri</a></li>
+    <li><a href="#dataflow">Veri Akışı</a></li>
+    <li><a href="#config">Kritik Konfigürasyonlar</a></li>
+  </ol>
+</nav>
+
+<section id="tech-stack">
+  <h2><span class="num">1.</span>Teknoloji Yığını (Tech Stack)</h2>
+  <p>Projede kullanılan ana teknolojiler ve her birinin projedeki kritik görevi:</p>
+
+  <div class="table-wrap">
+  <table>
+    <caption>Çekirdek Runtime &amp; Framework</caption>
+    <thead>
+      <tr><th>Teknoloji</th><th>Versiyon</th><th>Kritik Görevi</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>Node.js</code></td><td>20 (Docker) / 24 (yerel)</td><td>JavaScript çalışma zamanı; tüm sunucu tarafı kod bunun üzerinde çalışır.</td></tr>
+      <tr><td><code>Express</code></td><td>^5.2.1</td><td>HTTP sunucusu, routing, middleware zinciri (JSON parse, loglama, hata yönetimi).</td></tr>
+      <tr><td><code>CommonJS</code> (<code>require</code>/<code>module.exports</code>)</td><td>—</td><td>Modül sistemi; <code>package.json</code>'da <code>"type":"commonjs"</code> ile sabitlenmiş.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <caption>Veri Katmanı</caption>
+    <thead>
+      <tr><th>Teknoloji</th><th>Versiyon</th><th>Kritik Görevi</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>Prisma Client</code></td><td>^7.8.0</td><td>ORM; type-safe sorgular, migration yönetimi, ilişkisel <code>include</code>/<code>connect</code> operasyonları.</td></tr>
+      <tr><td><code>@prisma/adapter-pg</code></td><td>^7.8.0</td><td>Prisma'nın <code>pg</code> driver'ı üzerinden PostgreSQL'e bağlanmasını sağlayan "driver adapter" (Prisma 7'nin önerdiği yöntem).</td></tr>
+      <tr><td><code>pg</code></td><td>^8.22.0</td><td>Node.js PostgreSQL driver'ı; <code>Pool</code> üzerinden gerçek TCP bağlantı havuzunu yönetir.</td></tr>
+      <tr><td><code>PostgreSQL</code></td><td>15-alpine</td><td>Birincil ilişkisel veritabanı; Docker'da veya Render'da (managed) çalışır.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <caption>Kimlik Doğrulama &amp; Güvenlik</caption>
+    <thead>
+      <tr><th>Teknoloji</th><th>Versiyon</th><th>Kritik Görevi</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>jsonwebtoken</code></td><td>^9.0.3</td><td>Access (15dk) &amp; refresh (7g) token üretimi/doğrulaması (JWT tabanlı stateless auth).</td></tr>
+      <tr><td><code>bcrypt</code></td><td>^6.0.0</td><td>Şifre hash'leme (salt rounds = 12); şifreler asla düz metin saklanmaz.</td></tr>
+      <tr><td><code>express-rate-limit</code></td><td>^8.5.2</td><td>Login endpoint'inde brute-force koruması (15dk'da IP başına 5 deneme).</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <caption>Test, Kalite &amp; Ortam</caption>
+    <thead>
+      <tr><th>Teknoloji</th><th>Versiyon</th><th>Kritik Görevi</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>Jest</code></td><td>^30.4.2</td><td>Unit + integration test runner; coverage eşikleri (80/70/80/80) bu araçla zorunlu kılınıyor.</td></tr>
+      <tr><td><code>Supertest</code></td><td>^7.2.2</td><td>Gerçek port açmadan (in-process) HTTP isteği simülasyonu; integration testlerin temeli.</td></tr>
+      <tr><td><code>ESLint</code> + <code>@eslint/js</code></td><td>^10.7.0 / ^10.0.1</td><td>Statik kod analizi; "flat config" formatıyla (<code>eslint.config.js</code>) yapılandırılmış.</td></tr>
+      <tr><td><code>dotenv</code> / <code>dotenv-cli</code></td><td>^17.4.2 / ^11.0.0</td><td>Ortam değişkenlerini <code>.env</code>/<code>.env.test</code> dosyalarından okuma; <code>dotenv-cli</code> test migration'larını doğru dosyaya zorlar.</td></tr>
+      <tr><td><code>nodemon</code></td><td>^3.1.14</td><td>Yerel geliştirmede (<code>npm run dev</code>) dosya değişikliğinde otomatik yeniden başlatma.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <caption>Altyapı, CI/CD &amp; Deployment</caption>
+    <thead>
+      <tr><th>Teknoloji</th><th>Rolü</th><th>Kritik Görevi</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>Docker</code></td><td>Konteynerleştirme</td><td>Multi-stage <code>Dockerfile</code> (builder + runner), non-root <code>node</code> kullanıcısı ile production image.</td></tr>
+      <tr><td><code>docker compose</code></td><td>Yerel orkestrasyon</td><td><code>app</code> + <code>db</code> + <code>adminer</code> servislerini tek komutla ayağa kaldırır (bkz. Mimari Yapı).</td></tr>
+      <tr><td><code>GitHub Actions</code></td><td>CI/CD</td><td><code>ci.yml</code> (lint/test/build) ve <code>deploy.yml</code> (Render'a otomatik deploy + smoke test).</td></tr>
+      <tr><td><code>Render</code></td><td>Cloud hosting</td><td>Uygulamanın canlı çalıştığı platform — <code>https://http-lab.onrender.com</code>; Dockerfile'dan build alır.</td></tr>
+      <tr><td><code>Adminer</code></td><td>DB yönetim arayüzü</td><td>Yerel geliştirmede veritabanını tarayıcıdan (<code>:8080</code>) görsel olarak inceleme.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="architecture">
+  <h2><span class="num">2.</span>Mimari Yapı</h2>
+
+  <p>Proje, klasik bir <strong>katmanlı (layered) mimari</strong> izler: her katman yalnızca bir sorumluluğa sahiptir ve bir alttaki katmanı soyutlama üzerinden kullanır (SOLID — bkz. <code>REFACTORING_DIARY.md</code>). Katmanlar arası bağımlılık her zaman tek yönlüdür.</p>
+
+  <div class="pipeline">
+    <span class="step"><b>Route</b><small>routes/</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>Middleware</b><small>auth, log, error</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>Service/Util</b><small>token, password</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>Data Access</b><small>store/, db/</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>PostgreSQL</b></span>
+  </div>
+
+  <h3>Klasör Yapısı ve Her Katmanın Görevi</h3>
+  <pre><code>http-lab/
+├── src/
+│   ├── app.js              # Express app'i İNŞA EDER (route/middleware kaydı) — dinlemeye başlamaz
+│   ├── server.js            # app.js'i import edip PORT'ta dinlemeye başlatan TEK yer
+│   ├── db/
+│   │   └── prisma.js        # Uygulama genelinde TEK paylaşılan PrismaClient singleton'ı (DIP)
+│   ├── middleware/
+│   │   ├── authMiddleware.js   # authenticateToken (JWT doğrula) + requireRole (RBAC)
+│   │   ├── requestLogger.js    # Her isteği method/path/status/süre ile loglar
+│   │   └── errorHandler.js     # Zincirin EN SONUNDAKİ global hata yakalayıcı
+│   ├── routes/
+│   │   ├── auth.js          # /register, /login — orkestrasyon yapar, iş mantığı barındırmaz
+│   │   └── items.js         # /api/items CRUD — auth + role + ownership kontrolleriyle
+│   ├── store/
+│   │   └── itemsDb.js       # Item için TÜM Prisma sorguları burada (data access layer)
+│   └── utils/
+│       ├── tokenService.js     # JWT üretme/doğrulama — Express'ten bağımsız, saf fonksiyonlar
+│       └── passwordService.js  # bcrypt hash/compare — Express'ten bağımsız, saf fonksiyonlar
+├── prisma/
+│   ├── schema.prisma        # Veri modeli (User, Item, Category) — tek gerçek kaynak
+│   └── migrations/           # Versiyon kontrollü şema geçmişi
+├── tests/
+│   ├── unit/                # DB gerektirmez, mock'lanmış bağımlılıklar
+│   └── integration/         # Gerçek PostgreSQL'e karşı, Supertest ile uçtan uca
+└── .github/workflows/       # ci.yml + deploy.yml (bkz. Kritik Konfigürasyonlar)
+</code></pre>
+
+  <h3>Neden Bu Yapı? (Mimari Kararların Özeti)</h3>
+  <dl class="decisions">
+    <dt>app.js / server.js ayrımı</dt>
+    <dd>"Neyi inşa ediyorum" ile "nasıl çalıştırıyorum" birbirinden ayrıldı — <code>app.js</code>'i test dosyalarından <code>require</code> etmek gerçek bir ağ portu açmıyor (Supertest bunu kullanır).</dd>
+
+    <dt>Tek Prisma Singleton</dt>
+    <dd><code>db/prisma.js</code> tüm modüllerin paylaştığı tek bağlantı havuzunu üretir (DIP) — eskiden iki ayrı bağlantı havuzu açılıyordu, bu kaldırıldı.</dd>
+
+    <dt>İki Katmanlı Auth</dt>
+    <dd><code>authenticateToken</code> (kimlik) → <code>requireRole</code> (yetki) sırasıyla çalışır; ownership kontrolü ise route seviyesinde (<code>items.js</code> içinde) ayrıca yapılır.</dd>
+
+    <dt>Docker-first Yerel Geliştirme</dt>
+    <dd><code>docker compose up --build</code> asıl çalıştırma yöntemi kabul edildi — production'daki (Render) container davranışıyla birebir eşleşir.</dd>
+  </dl>
+</section>
+
+<section id="usage">
+  <h2><span class="num">3.</span>Somut Kullanım Örnekleri</h2>
+  <p>Her teknolojinin projede fiilen kullanıldığı en önemli dosya/satır referansları:</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Teknoloji</th><th>Dosya / Yol</th><th>Ne Yapıyor?</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td rowspan="3"><code>Express</code></td>
+        <td class="path">src/app.js</td>
+        <td>Middleware zinciri kurulumu (<code>express.json()</code>, <code>requestLogger</code>, route mount, 404, <code>errorHandler</code>).</td>
+      </tr>
+      <tr>
+        <td class="path">src/routes/items.js</td>
+        <td><code>express.Router()</code> ile <code>GET/POST/PUT/PATCH/DELETE /api/items</code> tanımları.</td>
+      </tr>
+      <tr>
+        <td class="path">src/server.js</td>
+        <td><code>app.listen(PORT, ...)</code> — sunucunun gerçekten dinlemeye başladığı tek satır.</td>
+      </tr>
+
+      <tr>
+        <td rowspan="3"><code>Prisma + adapter-pg</code></td>
+        <td class="path">src/db/prisma.js</td>
+        <td><code>Pool</code> → <code>PrismaPg</code> adapter → <code>PrismaClient</code> zincirini kuran, lazy singleton üreten <code>getPrismaClient()</code>.</td>
+      </tr>
+      <tr>
+        <td class="path">src/store/itemsDb.js</td>
+        <td>Tüm <code>Item</code> CRUD sorguları; <code>category: { connect: { id } }</code> ilişkisel yazım deseni.</td>
+      </tr>
+      <tr>
+        <td class="path">prisma/schema.prisma</td>
+        <td><code>User</code>/<code>Item</code>/<code>Category</code> modelleri, <code>Role</code> enum'u (<code>ADMIN</code>/<code>EDITOR</code>/<code>VIEWER</code>).</td>
+      </tr>
+
+      <tr>
+        <td rowspan="2"><code>jsonwebtoken</code></td>
+        <td class="path">src/utils/tokenService.js</td>
+        <td><code>generateAccessToken</code>/<code>generateRefreshToken</code>/<code>verifyAccessToken</code> — süre ve payload politikası tek yerde.</td>
+      </tr>
+      <tr>
+        <td class="path">src/middleware/authMiddleware.js</td>
+        <td><code>authenticateToken</code> — <code>Authorization: Bearer</code> header'ından token çıkarıp doğrular, <code>req.user</code>'a yazar.</td>
+      </tr>
+
+      <tr>
+        <td><code>bcrypt</code></td>
+        <td class="path">src/utils/passwordService.js</td>
+        <td><code>hashPassword</code>/<code>comparePassword</code> — <code>SALT_ROUNDS = 12</code> sabiti.</td>
+      </tr>
+
+      <tr>
+        <td><code>express-rate-limit</code></td>
+        <td class="path">src/routes/auth.js</td>
+        <td><code>loginLimiter</code> — 15 dakikada IP başına 5 deneme, <code>NODE_ENV=test</code>'te devre dışı.</td>
+      </tr>
+
+      <tr>
+        <td rowspan="2"><code>Jest</code> + <code>Supertest</code></td>
+        <td class="path">tests/integration/items.integration.test.js</td>
+        <td><code>request(app).post(...)</code> ile gerçek DB'ye karşı, port açmadan HTTP testi.</td>
+      </tr>
+      <tr>
+        <td class="path">tests/unit/health.test.js</td>
+        <td><code>jest.mock('../../src/db/prisma')</code> ile DB'yi "çökük" simüle edip <code>/health</code>'in 503 döndüğünü doğrular.</td>
+      </tr>
+
+      <tr>
+        <td><code>ESLint</code></td>
+        <td class="path">eslint.config.js</td>
+        <td>Flat config; <code>no-unused-vars</code> kuralı projenin <code>catch (err) { ... }</code> stiline uyacak şekilde özelleştirilmiş.</td>
+      </tr>
+
+      <tr>
+        <td rowspan="2"><code>Docker</code></td>
+        <td class="path">Dockerfile</td>
+        <td>2 aşamalı build: <code>builder</code> (npm ci + prisma generate) → <code>runner</code> (sadece gerekli dosyalar, <code>USER node</code>).</td>
+      </tr>
+      <tr>
+        <td class="path">docker-compose.yml</td>
+        <td><code>app</code> + <code>db</code> (portu host'a KAPALI) + <code>adminer</code> servisleri, iç Docker ağı üzerinden haberleşir.</td>
+      </tr>
+
+      <tr>
+        <td rowspan="2"><code>GitHub Actions</code></td>
+        <td class="path">.github/workflows/ci.yml</td>
+        <td><code>lint</code>/<code>test</code>/<code>build</code> paralel job'ları; <code>test</code> job'u <code>postgres</code> service container kullanır.</td>
+      </tr>
+      <tr>
+        <td class="path">.github/workflows/deploy.yml</td>
+        <td><code>main</code>'e merge sonrası Render deploy hook'unu tetikler, <code>/health</code>'i smoke test eder.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="dataflow">
+  <h2><span class="num">4.</span>Veri Akışı</h2>
+
+  <h3>4.1 — Yazma İsteği: <code>POST /api/items</code></h3>
+  <div class="pipeline">
+    <span class="step"><b>İstemci</b><small>Bearer token + JSON body</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>app.js</b><small>express.json() + requestLogger</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>items.js router</b></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>authenticateToken</b></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>requireRole('EDITOR')</b></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>route handler</b><small>validasyon</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>itemsDb.create()</b></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>Prisma Client</b></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>PostgreSQL</b></span>
+  </div>
+  <p>Hata durumunda (örn. geçersiz <code>categoryId</code>), akış <code>next(err)</code> ile <strong>doğrudan <code>errorHandler.js</code>'e</strong> atlar — ara katmanlar hata formatlamayla ilgilenmez.</p>
+
+  <h3>4.2 — Kimlik Doğrulama Akışı: <code>POST /api/auth/login</code></h3>
+  <div class="pipeline">
+    <span class="step"><b>İstemci</b><small>email + password</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>auth.js</b><small>loginLimiter</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>prisma.user.findUnique</b></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>passwordService</b><small>comparePassword</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>tokenService</b><small>generate*Token</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>prisma.user.update</b><small>refreshToken kaydı</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>İstemci</b><small>accessToken + refreshToken</small></span>
+  </div>
+  <p>Sonraki tüm isteklerde istemci <code>accessToken</code>'ı <code>Authorization: Bearer &lt;token&gt;</code> header'ında gönderir; <code>authMiddleware.js</code> bunu <code>tokenService.verifyAccessToken</code> ile doğrulayıp <code>req.user = { userId, role }</code> olarak zincire enjekte eder.</p>
+
+  <h3>4.3 — Deployment Akışı (CI/CD)</h3>
+  <div class="pipeline">
+    <span class="step"><b>git push</b><small>main'e merge</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>ci.yml</b><small>lint + test + build (paralel)</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>deploy.yml</b><small>Render deploy hook (curl -sf)</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>Render</b><small>Dockerfile build + çalıştır</small></span>
+    <span class="arrow">→</span>
+    <span class="step"><b>smoke test</b><small>GET /health → 200 bekle</small></span>
+  </div>
+  <p>Render tarafında konteyner ayağa kalkarken <code>Dockerfile</code>'daki <code>CMD ["sh","-c","npx prisma migrate deploy && npm start"]</code> otomatik olarak bekleyen migration'ları uygular, sonra sunucuyu <code>process.env.PORT</code> (Render'ın enjekte ettiği) üzerinde başlatır.</p>
+
+  <div class="callout">
+    <strong>Health Check'in Çift Rolü</strong>
+    <p class="wide"><code>GET /health</code> (<code>src/app.js</code>) hem CD pipeline'ının smoke test'i hem de (Week 8'de) UptimeRobot gibi bir dış izleme aracının hedefi olacak. <code>prisma.$queryRaw\`SELECT 1\`</code> ile gerçek DB bağlantısını test eder; başarısız olursa <code>503</code> + <code>db:"disconnected"</code> döner.</p>
+  </div>
+</section>
+
+<section id="config">
+  <h2><span class="num">5.</span>Kritik Konfigürasyonlar</h2>
+  <p>Uygulamanın ayakta kalmasını, doğru ortamda doğru şekilde çalışmasını sağlayan temel dosyalar:</p>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Dosya</th><th>Görevi</th><th>Dikkat Edilmesi Gereken</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="path">.env</td>
+        <td>Yerel (gerçek/dev) ortam değişkenleri: <code>DATABASE_URL</code>, <code>JWT_ACCESS_SECRET</code>, <code>JWT_REFRESH_SECRET</code>, <code>PORT</code>.</td>
+        <td><code>.gitignore</code>'da — asla commit edilmez. <code>DATABASE_URL</code> host'u <code>docker compose up</code> ile çalıştırmak için <code>db</code> olmalı, <code>localhost</code> değil.</td>
+      </tr>
+      <tr>
+        <td class="path">.env.test</td>
+        <td>Test ortamı değişkenleri — ayrı bir <code>http_lab_test</code> veritabanını gösterir.</td>
+        <td>Her <code>npm test</code> çalıştığında bu veritabanı <strong>tamamen temizlenir</strong> (<code>resetDb.js</code>). Yoksa <code>jest.setup.js</code> açıklayıcı bir hata fırlatır.</td>
+      </tr>
+      <tr>
+        <td class="path">prisma/schema.prisma</td>
+        <td>Veri modelinin TEK gerçek kaynağı; <code>prisma migrate dev/deploy</code> buradan SQL migration üretir.</td>
+        <td>Şema değişince mutlaka yeni bir migration dosyası (<code>prisma/migrations/</code>) oluşturulmalı, elle SQL yazılmamalı.</td>
+      </tr>
+      <tr>
+        <td class="path">prisma.config.ts</td>
+        <td>Prisma 7'nin yeni config formatı — şema yolu, migration yolu, seed komutu ve <code>DATABASE_URL</code>'in nereden okunacağını tanımlar.</td>
+        <td><code>import "dotenv/config"</code> içerdiği için <code>.env</code>'i otomatik yükler.</td>
+      </tr>
+      <tr>
+        <td class="path">package.json</td>
+        <td><code>scripts</code> (test/lint/dev zinciri), <code>jest</code> config (coverage eşikleri: %80/%70/%80/%80), <code>postinstall</code> (<code>prisma generate</code>).</td>
+        <td><code>pretest</code> hook'u her <code>npm test</code>'ten önce <code>db:migrate:test</code>'i otomatik çalıştırır — elle migration gerekmez.</td>
+      </tr>
+      <tr>
+        <td class="path">Dockerfile</td>
+        <td>Multi-stage build (<code>builder</code>/<code>runner</code>); production image'ı non-root <code>node</code> kullanıcısıyla, minimum dosyayla çalıştırır.</td>
+        <td><code>CMD</code>, container her başladığında <code>prisma migrate deploy</code>'u otomatik uygular — production'da genelde ayrı bir adım olur, burada laboratuvar amaçlı birleştirilmiş.</td>
+      </tr>
+      <tr>
+        <td class="path">docker-compose.yml</td>
+        <td>Yerel "tam stack" ortamı: <code>app</code> + <code>db</code> + <code>adminer</code>.</td>
+        <td><code>db</code> servisinin host portu kasıtlı olarak KAPALI (güvenlik) — sadece Docker iç ağından erişilebilir.</td>
+      </tr>
+      <tr>
+        <td class="path">eslint.config.js</td>
+        <td>Statik kod analizi kuralları (flat config formatı, ESLint 9+).</td>
+        <td><code>no-unused-vars</code> kasıtlı olarak gevşetilmiş (<code>caughtErrors:'none'</code>) — projenin <code>catch(err)</code> stiliyle çakışmasın diye.</td>
+      </tr>
+      <tr>
+        <td class="path">.github/workflows/ci.yml</td>
+        <td><code>lint</code> + <code>test</code> (gerçek Postgres service container ile) + <code>build</code> job'ları; her <code>push</code>/<code>pull_request</code>'ta çalışır.</td>
+        <td>Gerekli secret: <code>TEST_DATABASE_URL</code>. <code>.env.test</code> dosyası CI içinde bu secret'tan dinamik olarak üretiliyor.</td>
+      </tr>
+      <tr>
+        <td class="path">.github/workflows/deploy.yml</td>
+        <td><code>main</code>'e merge sonrası Render'a deploy tetikler ve <code>/health</code>'i smoke test eder.</td>
+        <td>Gerekli secret: <code>RENDER_DEPLOY_HOOK</code>. Opsiyonel variable: <code>RENDER_SERVICE_URL</code> (yoksa sabit URL'e düşer).</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout warn">
+    <strong>Bilinen Açık Noktalar</strong>
+    <p class="wide"><code>PUT</code>/<code>PATCH /api/items/:id</code> henüz ownership kontrolü yapmıyor (sadece <code>DELETE</code> yapıyor). <code>main</code> branch protection kuralı admin bypass'ına açık — henüz "require status checks" zorunlu değil. Detaylar için <code>TODO.md</code> ve <code>LEARNING_LOG.md</code>'ye bakın.</p>
+  </div>
+</section>
+
+<footer>
+  <p>Bu doküman, <code>http-lab</code> reposunun Week 7 (CI/CD &amp; Cloud Deployment) tamamlandığı andaki durumunu yansıtır. Proje ilerledikçe (Week 8: Monitoring/Logging, Week 9: Frontend, Week 10: AI/RAG) bu dosyanın da güncellenmesi önerilir — güncel yol haritası için <code>TODO.md</code>'ye bakın.</p>
+</footer>
+
+</div>
+</body>
+</html>
