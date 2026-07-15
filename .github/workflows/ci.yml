@@ -1,0 +1,84 @@
+name: CI
+
+# main'e her push'ta VE her pull request'te çalışır — bir PR'ı main'e
+# birleştirmeden önce üç job'un da (lint/test/build) geçmesini istiyoruz.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+
+    # GitHub Actions'da bir "service container", job'un adımlarıyla PARALEL
+    # ayağa kalkan ve aynı runner ağında (localhost üzerinden) erişilebilen
+    # geçici bir container'dır. Burada gerçek bir PostgreSQL sunucusu açıyoruz
+    # ki testler (mock değil) gerçek bir DB'ye karşı çalışsın — tıpkı yerelde
+    # `.env.test` ile yaptığımız gibi.
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: http_lab_test
+        ports:
+          - 5432:5432
+        # Container ayağa kalktı ama Postgres henüz istek kabul etmeye hazır
+        # olmayabilir; sonraki adımlar başlamadan önce "sağlıklı" (healthy)
+        # olmasını bekliyoruz.
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+
+      # jest.setup.js gerçek bir ".env.test" DOSYASI arıyor (bkz. o dosyadaki
+      # açıklama) — process env'e DATABASE_URL koymak tek başına yetmez.
+      # Yerelde geliştiricinin ".env.test.example"ı kopyalayıp doldurduğu
+      # adımı burada CI için otomatik yapıyoruz. DATABASE_URL, repository
+      # secrets'tan geliyor (Settings → Secrets and variables → Actions →
+      # TEST_DATABASE_URL) — bu, yukarıdaki service container'ın bağlantı
+      # bilgisiyle eşleşmeli: postgresql://postgres:postgres@localhost:5432/http_lab_test
+      - name: .env.test dosyasını oluştur
+        run: |
+          cat > .env.test <<EOF
+          PORT=3001
+          NODE_ENV=test
+          DATABASE_URL=${{ secrets.TEST_DATABASE_URL }}
+          JWT_ACCESS_SECRET=ci_test_access_secret
+          JWT_REFRESH_SECRET=ci_test_refresh_secret
+          EOF
+
+      - run: npm test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Sadece Docker image'ın SORUNSUZ build olduğunu doğruluyoruz
+      # (TODO.md'deki hedef: "hata yoksa geç"). Image'ı bir yere push
+      # etmiyoruz — bu iş deploy.yml'in sorumluluğu.
+      - name: Docker image build et
+        run: docker build -t http-lab:ci .

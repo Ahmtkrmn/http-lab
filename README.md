@@ -140,41 +140,49 @@ http-lab/
 
 ## Kurulum
 
-### Gereksinimler
-- Node.js
-- Çalışan bir PostgreSQL sunucusu
+### Yöntem A — Docker Compose (önerilen, asıl yöntem)
 
-### Adımlar
+Bu proje, production'da da (Railway/Render) container olarak çalışacağı için,
+yerelde de aynı şekilde `docker compose up` ile çalıştırılması **canonical**
+(asıl) yöntem kabul edilir — "kendi bilgisayarımda çalışıyor ama container'da
+çalışmıyor" sürprizlerini önler. Neden bu karar verildi, bkz. `LEARNING_LOG.md`.
 
-1. Bağımlılıkları yükleyin:
-   ```bash
-   npm install
+1. `.env.example` dosyasını `.env` olarak kopyalayın; `DATABASE_URL`'deki host
+   kısmını **`db`** olarak bırakın (bu, `docker-compose.yml`'deki servis adıdır,
+   `localhost` DEĞİL — container'lar birbirine Docker'ın iç DNS'i üzerinden bu
+   isimle ulaşır).
+2. ```bash
+   docker compose up --build
    ```
+   Bu komut `app` (API), `db` (PostgreSQL) ve `adminer` (DB yönetim arayüzü,
+   `http://localhost:8080`) servislerini ayağa kaldırır. `app` container'ı
+   açılırken `Dockerfile`'daki `CMD` sayesinde migration'ları otomatik uygular.
+3. Sunucu `http://localhost:3000` adresinde çalışır.
 
-2. `.env.example` dosyasını `.env` olarak kopyalayıp kendi değerlerinizle doldurun:
-   ```
-   PORT=3000
-   NODE_ENV=development
-   DATABASE_URL="postgresql://<kullanici>:<sifre>@localhost:5432/<veritabani_adi>"
-   JWT_ACCESS_SECRET=<guclu-bir-gizli-anahtar>
-   JWT_REFRESH_SECRET=<guclu-bir-gizli-anahtar>
-   ```
+Kod değiştirdikçe image'ı yeniden build etmeniz gerekir (`docker compose up
+--build`); `package*.json` değişmediyse Docker'ın layer cache'i sayesinde
+`npm ci` adımı tekrar çalışmaz, sadece kaynak kod kopyalanır — bu yüzden
+rebuild beklenenden hızlıdır.
 
-3. Migration'ları uygulayın:
-   ```bash
-   npx prisma migrate deploy
-   # geliştirme ortamında: npx prisma migrate dev
-   ```
+### Yöntem B — Native (`npm run dev`, hızlı iterasyon için)
 
-4. (Opsiyonel) Örnek verilerle veritabanını doldurun:
-   ```bash
-   npx prisma db seed
-   ```
+Sık kod değişikliği yapıp anında yeniden yükleme (hot reload) istiyorsanız,
+uygulamayı container dışında, `nodemon` ile native çalıştırabilirsiniz. Bu
+durumda Postgres'e host makineden erişmeniz gerektiği için:
 
-5. Sunucuyu başlatın:
-   ```bash
-   npm run dev     # nodemon ile (geliştirme), src/server.js'i çalıştırır
-   npm start       # üretim modu
+1. `.env`'de `DATABASE_URL` host kısmını `localhost` yapın.
+2. `docker-compose.yml`'deki `db` servisine **geçici olarak** (commit
+   etmeden) şunu ekleyin:
+   ```yaml
+   ports:
+     - "5432:5432"
+   ```
+3. ```bash
+   npm install               # postinstall -> prisma generate
+   docker compose up db adminer   # sadece veritabanını container'da çalıştır
+   npx prisma migrate deploy      # veya geliştirmede: npx prisma migrate dev
+   npx prisma db seed             # (opsiyonel) örnek veri
+   npm run dev                    # nodemon ile src/server.js
    ```
 
 Sunucu varsayılan olarak `http://localhost:3000` adresinde çalışır.

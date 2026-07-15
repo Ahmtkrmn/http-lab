@@ -12,6 +12,11 @@ const errorHandler = require('./middleware/errorHandler');
 const itemsRouter = require('./routes/items');
 const authRouter = require('./routes/auth');
 
+// Health check bağımlılıkları: DB canlılığını ölçmek için paylaşılan Prisma
+// client'ı, response'a versiyon bilgisini eklemek için package.json'u kullanıyoruz.
+const { getPrismaClient } = require('./db/prisma');
+const { version } = require('../package.json');
+
 // SOLID / SRP notu:
 // Refactor öncesinde bu dosya hem "Express uygulamasını inşa et" hem de
 // "sunucuyu belirli bir portta dinlemeye başlat" sorumluluklarını aynı anda
@@ -36,10 +41,27 @@ app.use(requestLogger);
 app.use('/api/items', itemsRouter);
 app.use('/api/auth', authRouter);
 
-// 4. Health Check Endpoint: A simple route to verify the API is running
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
+// 4. Health Check Endpoint: CI/CD smoke test'i ve UptimeRobot gibi
+// izleme araçları bu uç noktayı periyodik olarak yoklayacak (bkz. TODO.md
+// Week 7/8). Sadece "process ayakta mı?" değil, "process DB'ye erişebiliyor
+// mu?" sorusunu da yanıtlaması gerekir — aksi halde DB'siz de "ok" dönen bir
+// health check, gerçek bir kesinti sırasında yanlış güven verir.
+app.get('/health', async (req, res) => {
+  let dbStatus = 'connected';
+  let statusCode = 200;
+
+  try {
+    const prisma = getPrismaClient();
+    await prisma.$queryRaw`SELECT 1`;
+  } catch (err) {
+    dbStatus = 'disconnected';
+    statusCode = 503;
+  }
+
+  res.status(statusCode).json({
+    status: statusCode === 200 ? 'ok' : 'error',
+    version,
+    db: dbStatus,
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
   });

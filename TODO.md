@@ -83,15 +83,16 @@ Bu maddeler küçük ama production'da fark yaratır. Haftaya geçmeden önce ka
 
 ### GitHub Actions — CI Pipeline
 
-- [ ] `.github/workflows/ci.yml` dosyasını oluştur
-- [ ] **Tetikleyici:** Her `pull_request` ve `main` branch push'unda çalışsın
-- [ ] **`lint` job'u:** ESLint kur (`npm install --save-dev eslint`), her push'ta çalışsın
-- [ ] **`test` job'u:** PostgreSQL servis container'ı ayağa kaldır, `npm test` çalıştır
+- [x] `.github/workflows/ci.yml` dosyasını oluştur
+- [x] **Tetikleyici:** Her `pull_request` ve `main` branch push'unda çalışsın
+- [x] **`lint` job'u:** ESLint kur (`npm install --save-dev eslint`), her push'ta çalışsın *(bkz. LEARNING_LOG.md — Adım 3)*
+- [x] **`test` job'u:** PostgreSQL servis container'ı ayağa kaldır, `npm test` çalıştır
   - GitHub Actions'da servis container nasıl tanımlanır öğren (`services.postgres`)
   - `DATABASE_URL`'i GitHub Secrets'tan al (`${{ secrets.TEST_DATABASE_URL }}`)
-- [ ] **`build` job'u:** Docker image'ı build et, hata yoksa geç
-- [ ] Üç job paralel çalışsın, hepsi geçmeden merge edilemesin
-- [ ] Branch protection rule'u GitHub'da aktif et: `main`'e doğrudan push yasak
+- [x] **`build` job'u:** Docker image'ı build et, hata yoksa geç
+- [x] Üç job paralel çalışsın, hepsi geçmeden merge edilemesin *(job'lar arasında `needs:` yok, hepsi bağımsız/paralel)*
+- [ ] Branch protection rule'u GitHub'da aktif et: `main`'e doğrudan push yasak — **senin yapman gerekiyor** (GitHub repo Settings → Branches → Add rule; benim dosya düzenlemelerimle yapılamaz, repo ayarı)
+- [ ] **Senin yapman gereken ek adım:** GitHub repo'da Settings → Secrets and variables → Actions → "New repository secret" ile `TEST_DATABASE_URL` adında bir secret ekle. Değeri: `postgresql://postgres:postgres@localhost:5432/http_lab_test` (workflow'daki `postgres` servis container'ının kullanıcı/şifre/db adıyla birebir eşleşmeli).
 
 ### GitHub Actions — CD Pipeline
 
@@ -104,13 +105,13 @@ Bu maddeler küçük ama production'da fark yaratır. Haftaya geçmeden önce ka
 
 ### Health Check Endpoint
 
-- [ ] `GET /health` endpoint'ini `src/routes/` dışında `app.js`'e ekle
-- [ ] Response şu alanları içersin:
+- [x] `GET /health` endpoint'ini `src/routes/` dışında `app.js`'e ekle
+- [x] Response şu alanları içersin:
   ```json
   { "status": "ok", "version": "1.0.0", "db": "connected", "uptime": 3600 }
   ```
-- [ ] Veritabanı bağlantısını da kontrol et: `prisma.$queryRaw\`SELECT 1\`` ile ping at
-- [ ] DB bağlantısı yoksa `"db": "disconnected"` ve status 503 dön
+- [x] Veritabanı bağlantısını da kontrol et: `prisma.$queryRaw\`SELECT 1\`` ile ping at
+- [x] DB bağlantısı yoksa `"db": "disconnected"` ve status 503 dön *(bkz. LEARNING_LOG.md — Adım 3; testler: `tests/integration/health.integration.test.js` + `tests/unit/health.test.js`)*
 
 ### Portfolio #2 Çıktısı
 
