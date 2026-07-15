@@ -1,4 +1,5 @@
 # HTTP Lab
+![CI Pipeline](https://github.com/Ahmtkrmn/http-lab/actions/workflows/ci.yml/badge.svg)
 
 Express 5 + Prisma 7 (PostgreSQL) ile yazılmış, JWT tabanlı kimlik doğrulama
 ve rol bazlı yetkilendirme (RBAC) içeren bir REST API projesi. Proje,
