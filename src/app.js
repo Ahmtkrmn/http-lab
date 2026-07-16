@@ -7,6 +7,7 @@ const express = require('express');
 // Import our custom middlewares
 const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
+const metricsAccessGuard = require('./middleware/metricsAccessGuard');
 
 // Import our route definitions
 const itemsRouter = require('./routes/items');
@@ -16,6 +17,9 @@ const authRouter = require('./routes/auth');
 // client'ı, response'a versiyon bilgisini eklemek için package.json'u kullanıyoruz.
 const { getPrismaClient } = require('./db/prisma');
 const { version } = require('../package.json');
+
+// Week 8: Prometheus metrik kayıt defteri (registry) ve ölçüm middleware'i.
+const { register, metricsMiddleware } = require('./metrics/metrics');
 
 // SOLID / SRP notu:
 // Refactor öncesinde bu dosya hem "Express uygulamasını inşa et" hem de
@@ -34,8 +38,14 @@ const app = express();
 app.use(express.json());
 
 // 2. Custom Middleware: Log every incoming request
-// Placed after express.json() so we could theoretically log body size accurately
+// Placed after express.json() so we could theoretically log body size accurately.
+// requestLogger'ı metrics'ten ÖNCE koyuyoruz ki bu noktadan sonraki her log
+// satırında (metrics guard'ının reddi dahil) requestId hazır olsun.
 app.use(requestLogger);
+
+// 2b. Metrics Middleware: Her isteğin süresini/sayısını ölç. Route'lardan ÖNCE
+// takılır ki hiçbir isteği kaçırmasın (bkz. src/metrics/metrics.js).
+app.use(metricsMiddleware);
 
 // 3. Route Handlers: Mount the items router to the '/api/items' path
 app.use('/api/items', itemsRouter);
@@ -65,6 +75,14 @@ app.get('/health', async (req, res) => {
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
   });
+});
+
+// 4b. Metrics Endpoint: Prometheus bu uç noktayı periyodik olarak yoklar (pull).
+// `metricsAccessGuard` ile korunur — içeriği (istek hacmi, hata oranı, bağlantı
+// sayıları) halka açık olmamalı (bkz. middleware'deki güvenlik notu).
+app.get('/metrics', metricsAccessGuard, async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
 });
 
 // 5. 404 Handler: Catch-all for requests that didn't match any route above

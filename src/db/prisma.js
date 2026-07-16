@@ -19,11 +19,18 @@ const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
 
 let prismaInstance = null;
+// Week 8: `pg` Pool örneğine ayrı bir referans tutuyoruz. Neden?
+// `active_db_connections` metriği (bkz. src/metrics/metrics.js) bağlantı
+// havuzunun ANLIK durumunu (kaç bağlantı açık/boşta) okumak zorunda; bu bilgi
+// Prisma client'ında değil, alttaki pg Pool'unda (totalCount/idleCount) yaşıyor.
+// Adapter deseni Pool'u içeride sakladığı için dışarıdan erişemiyorduk — bu yüzden
+// oluşturduğumuz anda referansını yakalayıp getPool() ile dışa açıyoruz.
+let poolInstance = null;
 
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
-  const pool = new Pool({ connectionString });
-  const adapter = new PrismaPg(pool);
+  poolInstance = new Pool({ connectionString });
+  const adapter = new PrismaPg(poolInstance);
   return new PrismaClient({ adapter });
 }
 
@@ -34,4 +41,11 @@ function getPrismaClient() {
   return prismaInstance;
 }
 
-module.exports = { getPrismaClient };
+// pg Pool'una erişim (yalnızca metrics içindir). `null` dönebilir: henüz hiç
+// DB bağlantısı kurulmadıysa (getPrismaClient hiç çağrılmadıysa) Pool da yoktur —
+// çağıran taraf bu durumu tolere etmeli (gauge'da 0 raporlamak gibi).
+function getPool() {
+  return poolInstance;
+}
+
+module.exports = { getPrismaClient, getPool };

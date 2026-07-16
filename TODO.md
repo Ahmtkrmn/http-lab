@@ -33,44 +33,40 @@ Bu projeyi bitirdiğimde elimde şunlar olacak:
 
 ### Structured Logging
 
-- [ ] `pino` veya `winston` kur: `npm install pino pino-pretty`
-- [ ] `src/utils/logger.js` dosyası oluştur, tüm `console.log` ve `console.error` çağrılarını bununla değiştir
-- [ ] Log formatı JSON olsun (`NODE_ENV=production`'da), development'ta human-readable
-- [ ] Her log satırına `requestId` ekle (UUID): her istek için `X-Request-ID` header'ı üret, tüm log satırları aynı ID'yi taşısın
-- [ ] **Log seviyeleri kuralını yaz ve README'ye ekle:**
-  - `DEBUG`: Sadece local geliştirmede, ayrıntılı akış
-  - `INFO`: Login, kayıt, ödeme gibi önemli iş olayları
-  - `WARN`: Beklenmedik ama kurtarılabilir durumlar (örn: kullanıcı bulunamadı)
-  - `ERROR`: Exception'lar, başarısız işlemler
-- [ ] `requestLogger.js` middleware'ini logger ile yeniden yaz; `console.log` kaldır
-- [ ] `errorHandler.js` middleware'ini logger.error ile yeniden yaz
+- [x] `pino` veya `winston` kur: `npm install pino pino-pretty` — pino + pino-pretty (dev) kuruldu (bkz. `LEARNING_LOG.md` Adım 5)
+- [x] `src/utils/logger.js` dosyası oluştur, tüm `console.log` ve `console.error` çağrılarını bununla değiştir — `server.js`, `requestLogger.js`, `errorHandler.js` taşındı
+- [x] Log formatı JSON olsun (`NODE_ENV=production`'da), development'ta human-readable — smoke test ile ikisi de doğrulandı
+- [x] Her log satırına `requestId` ekle (UUID): her istek için `X-Request-ID` header'ı üret, tüm log satırları aynı ID'yi taşısın — `crypto.randomUUID()` + pino child logger; gelen header korunuyor
+- [x] **Log seviyeleri kuralını yaz ve README'ye ekle** — README "Monitoring, Logging & Observability" bölümünde tablo olarak
+- [x] `requestLogger.js` middleware'ini logger ile yeniden yaz; `console.log` kaldır — status koduna göre seviye (5xx→error, 4xx→warn)
+- [x] `errorHandler.js` middleware'ini logger.error ile yeniden yaz — stack trace log'a gider, istemciye gitmez
 
 ### Metrics
 
-- [ ] `prom-client` kur: `npm install prom-client`
-- [ ] `GET /metrics` endpoint'i ekle (Prometheus formatında)
-- [ ] Şu metric'leri implement et:
+- [x] `prom-client` kur: `npm install prom-client`
+- [x] `GET /metrics` endpoint'i ekle (Prometheus formatında) — `src/metrics/metrics.js` + `app.js`
+- [x] Şu metric'leri implement et:
   - `http_requests_total` — Counter, `method` + `route` + `status_code` label'ı ile
   - `http_request_duration_seconds` — Histogram, P50/P95/P99 percentile'ları görünür olsun
-  - `active_db_connections` — Gauge
-- [ ] Metrics middleware'ini tüm route'lardan önce ekle
-- [ ] `/metrics` endpoint'i sadece internal erişime açık olsun (IP whitelist veya ayrı port)
+  - `active_db_connections` — Gauge (pg Pool'dan pull anında okunur)
+- [x] Metrics middleware'ini tüm route'lardan önce ekle
+- [x] `/metrics` endpoint'i sadece internal erişime açık olsun (IP whitelist veya ayrı port) — `metricsAccessGuard`: METRICS_TOKEN (önerilen) + IP allowlist
 
-### Grafana Cloud (Ücretsiz Tier)
+### Grafana Cloud (Ücretsiz Tier) — ⚠️ SENİN AKSİYONUN (kod hazır, panel kurulumu gerekli)
+
+Uygulama tarafı hazır: `/metrics` Prometheus formatında yayında ve PromQL sorguları
+README'ye yazıldı. Kalan adımlar bir panel/hesap kurulumudur (dosyayla yapılamaz):
 
 - [ ] Grafana Cloud'da ücretsiz hesap aç
-- [ ] Prometheus remote_write ile `/metrics` endpoint'ini Grafana'ya bağla
-- [ ] En az 3 panelli dashboard kur:
-  - **RPS (Request Per Second):** Son 5 dakikada kaç istek geldi?
-  - **Error Rate:** 5xx oranı ne? (`http_requests_total{status_code=~"5.."}`)
-  - **P95 Latency:** İsteklerin %95'i kaç ms altında yanıt alıyor?
+- [ ] Grafana Alloy/Agent ile `/metrics`'i scrape edip Grafana'ya `remote_write` et (README'de adımlar)
+- [ ] En az 3 panelli dashboard kur (RPS / Error Rate / P95 Latency — PromQL'ler README'de hazır)
 - [ ] Dashboard ekran görüntüsünü README'ye ekle
 
-### Alerting
+### Alerting — ⚠️ SENİN AKSİYONUN (kod hazır: /health 200/503 döner)
 
+- [x] README'ye "Monitoring & Alerting" bölümü ekle — Grafana + UptimeRobot adım-adım rehberi eklendi
 - [ ] UptimeRobot ücretsiz plan ile `/health` endpoint'ini izle (5 dakikada bir ping)
 - [ ] E-posta alertini ayarla: servis 2 dakika yanıt vermezse bildirim gelsin
-- [ ] README'ye "Monitoring & Alerting" bölümü ekle
 
 ---
 
@@ -208,8 +204,8 @@ Bu maddeler haftalık değil ama projeyi büyüttükçe birikirse sonra yazmak z
 | 4 | Auth & Security | ✅ Tamamlandı |
 | 5 | Testing & Clean Code | ✅ Tamamlandı (%94 coverage) |
 | 6 | Docker | ✅ Tamamlandı (multi-stage build) |
-| 7 | CI/CD & Deployment | 🔲 Bu hafta |
-| 8 | Monitoring & Logging | 🔲 Sonraki hafta |
+| 7 | CI/CD & Deployment | ✅ Tamamlandı |
+| 8 | Monitoring & Logging | 🟡 Kod tamamlandı (logging + metrics + testler); Grafana/UptimeRobot kurulumu senin aksiyonunda |
 | 9 | Frontend & Full-Stack | 🔲 |
 | 10 | AI/RAG (Portfolio #3) | 🔲 |
 

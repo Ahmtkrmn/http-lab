@@ -1,0 +1,55 @@
+// ==========================================================================
+// Grafana Alloy yapılandırması — http-lab observability
+// ==========================================================================
+//
+// Bu dosya, "pull" modelindeki /metrics endpoint'i ile "push" modelindeki
+// Grafana Cloud arasındaki KÖPRÜdür. Mimari şöyle:
+//
+//   [http-lab @ Render]  --(scrape, pull)-->  [Alloy]  --(remote_write, push)-->  [Grafana Cloud]
+//        /metrics                              (bu ajan)                            (Prometheus)
+//
+// Neden bir ajana ihtiyaç var? Grafana Cloud, internetteki rastgele bir
+// endpoint'i kendisi yoklamaz (güvenlik/ölçek). Bunun yerine SEN bir collector
+// (Alloy) çalıştırırsın; o /metrics'i düzenli aralıklarla çeker ve topladığı
+// metrikleri Grafana Cloud'un Prometheus'una remote_write ile iletir.
+//
+// Sırlar (endpoint, kullanıcı, token) bu dosyaya GÖMÜLMEZ — ortam
+// değişkenlerinden (`sys.env`) okunur; değerleri `.env.monitoring` dosyasına
+// yaz (o dosya .gitignore'da olmalı).
+
+// 1) SCRAPE: http-lab'in /metrics'ini periyodik olarak çek.
+prometheus.scrape "http_lab" {
+  targets = [
+    // Örn. "http-lab.onrender.com:443" — .env.monitoring içinde SCRAPE_TARGET.
+    { __address__ = sys.env("SCRAPE_TARGET") },
+  ]
+
+  // Render HTTPS (443) üzerinden servis ediyor; /metrics yolunu açıkça belirt.
+  scheme          = "https"
+  metrics_path    = "/metrics"
+  scrape_interval = "15s"
+
+  // /metrics erişim koruması (metricsAccessGuard) için bearer token.
+  // Render'da METRICS_TOKEN env'ini AYNI değerle ayarlamalısın; aksi halde
+  // (token sunucuda tanımlı değilse) endpoint IP allowlist'e düşer ve Render
+  // proxy'si arkasında fiilen herkese açık kalır. Bu yüzden token ŞİDDETLE önerilir.
+  bearer_token = sys.env("METRICS_TOKEN")
+
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+// 2) REMOTE_WRITE: toplanan metrikleri Grafana Cloud'a gönder.
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    // Grafana Cloud → "Prometheus" data source detaylarındaki "Remote Write
+    // Endpoint" URL'i (…/api/prom/push ile biter).
+    url = sys.env("GRAFANA_CLOUD_PROM_URL")
+
+    basic_auth {
+      // username = Prometheus instance ID (bir sayı), password = API token
+      // (metrics:write yetkili). Grafana Cloud panelinden alınır.
+      username = sys.env("GRAFANA_CLOUD_USER")
+      password = sys.env("GRAFANA_CLOUD_API_KEY")
+    }
+  }
+}

@@ -36,8 +36,23 @@ push to GitHub on your own initiative. Do stage/commit locally only if asked.
   all parallel) + CD (Render deploy hook + smoke test) are live and green.
   App is deployed at **https://http-lab.onrender.com** (verify with `curl
   https://http-lab.onrender.com/health`).
-- Week 8 (Monitoring/Logging/Observability — pino, prom-client, Grafana Cloud,
-  UptimeRobot) is next, not yet started.
+- **Week 8 (Monitoring/Logging/Observability): 🟡 code done, external setup
+  pending.** Structured logging (`pino`, JSON in prod / pino-pretty in dev,
+  `LOG_LEVEL`), per-request `requestId` (`X-Request-ID`, preserved if
+  incoming) via a pino child logger on `req.log`; `console.*` fully removed
+  from `server.js`/`requestLogger.js`/`errorHandler.js`. Prometheus metrics
+  (`prom-client`) at `GET /metrics`: `http_requests_total` (Counter),
+  `http_request_duration_seconds` (Histogram), `active_db_connections`
+  (Gauge, reads pg Pool via new `getPool()` in `src/db/prisma.js`). Metrics
+  middleware runs before all routes and **skips `/metrics`** itself; `route`
+  label uses the **route pattern** (`req.baseUrl + req.route.path`), not the
+  raw path — 404s collapse to `unmatched` (cardinality guard). `/metrics` is
+  gated by `src/middleware/metricsAccessGuard.js`: `METRICS_TOKEN` bearer
+  (preferred, PaaS-safe) OR IP allowlist (loopback/private + `METRICS_ALLOWED_IPS`).
+  59 tests, coverage ~96/86/98/96. **Still user's action (not file-doable):**
+  Grafana Cloud account + Alloy/Agent scrape→remote_write + 3-panel dashboard
+  + screenshot; UptimeRobot `/health` monitor + email alert. Step-by-step
+  guides are in `README.md` → "Monitoring, Logging & Observability".
 - Weeks 9–10 (Frontend/full-stack, AI/RAG portfolio #3) not started.
 
 Known still-open item from Week 7: GitHub branch protection on `main` exists

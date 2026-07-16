@@ -369,3 +369,142 @@ gerçekten başarısız olursa job kırmızı olur mu, yoksa sessizce mi geçer?
 Actions'ın `run:` bloklarında varsayılan olarak zaten açıktır, ama `curl`
 gibi araçların "başarı" tanımını senin niyetinle eşleştirmek (`-f` bayrağı
 gibi) ayrı bir sorumluluktur — `set -e` bunu senin yerine yapmaz.
+
+---
+
+## Adım 5 — Week 8: Monitoring, Logging & Observability
+
+**Tarih:** 2026-07-16
+
+Bu hafta "çalışıyor gibi görünüyor" ile "ölçebiliyorum" arasındaki farkı kuran
+katmanı ekledik: structured logging (pino), request correlation (requestId) ve
+Prometheus metrikleri (prom-client). Grafana Cloud ve UptimeRobot kurulumu bir
+panel/hesap işi olduğu için senin aksiyonuna bırakıldı (README'de adım-adım
+rehber var); uygulama tarafı (JSON log, `/metrics`, `/health` 200/503) hazır.
+
+### 1. `console.log` → structured logging (pino)
+
+**Yapılan Değişiklik:**
+`src/utils/logger.js` oluşturuldu (tek paylaşılan pino örneği). `server.js`,
+`middleware/requestLogger.js` ve `middleware/errorHandler.js` içindeki tüm
+`console.log`/`console.error` çağrıları bununla değiştirildi. Format:
+`NODE_ENV=production`'da tek satırlık JSON (ISO-8601 zaman damgalı),
+development'ta `pino-pretty` ile renkli/insan-okur çıktı, test'te `silent`.
+
+**Mimari Karar:**
+Neden `console.log` yeterli değil? `console.log` düz metin (string) üretir; bir
+string'i bir izleme aracının (Grafana Loki, Datadog) alanlara ayırıp
+"status_code=500 olanları getir" diye sorgulaması çok zordur. pino ise her satırı
+tek satırlık bir JSON nesnesi olarak yazar (structured logging) — makine bunu
+doğrudan filtreleyip aggregate edebilir. Production'da transport (pino-pretty)
+KULLANMIYORUZ: pretty format JSON'u bozar ve bir worker thread açar; container
+ortamında doğru davranış, uygulamanın sadece stdout'a saf JSON yazması, toplama
+işini platforma bırakmasıdır (12-factor "logs as event streams").
+
+**Mentör Notu:**
+Log seviyesini bir "olayın önemi"ne göre seç, gürültüye göre değil. Bu projede
+kuralı status koduna bağladık: 5xx→error, 4xx→warn, gerisi→info. Böylece
+production'da `level>=warn` filtreleyerek "sorunlu" istekleri saniyeler içinde
+ayıklarsın. Ayrıca hata loglarken hata NESNESİNİ (`{ err }`) ver, `err.message`
+string'ini değil — pino'nun serializer'ı stack trace'i JSON'a yazar; ama o
+stack'i İSTEMCİYE gönderme (iç dosya yollarını sızdırmak güvenlik zaafıdır).
+
+### 2. requestId (correlation ID) — `X-Request-ID`
+
+**Yapılan Değişiklik:**
+`requestLogger` artık her isteğe `crypto.randomUUID()` ile bir `requestId`
+üretiyor (gelen `X-Request-ID` header'ı varsa onu koruyor), bunu yanıt header'ına
+koyuyor ve `req.log = logger.child({ requestId })` ile isteğe özel bir child
+logger yaratıyor. Bu isteğin ürettiği her log satırı (errorHandler dahil) aynı
+ID'yi taşıyor.
+
+**Mimari Karar:**
+UUID için ayrı bir paket (`uuid`) kurmadım — Node'un yerleşik
+`crypto.randomUUID()`'si yeterli (bağımlılık minimalizmi). Gelen header'ı
+KORUMAK bilinçli: ileride önünde bir proxy/gateway veya çağıran başka bir servis
+kendi ID'sini üretmişse, onu sürdürmek isteğin servis sınırlarını AŞAN takibini
+(distributed tracing'in ilk adımı) mümkün kılar. Child logger deseni sayesinde
+`requestId`'yi her log çağrısına elle eklemeyi unutma riski ortadan kalkar.
+
+**Mentör Notu:**
+Correlation ID, "gece 3'teki arıza"nın en pratik aracıdır: bir kullanıcı hata
+alıp sana `X-Request-ID`'sini iletince, log'larda `requestId="..."` ile o tek
+isteğin bütün hikâyesini (giriş→DB→hata) izole edersin. Bunu daha ilk günden
+koymak, sonradan "hangi log hangi isteğe ait?" kâbusundan kurtarır.
+
+### 3. Prometheus metrikleri + cardinality tuzağı
+
+**Yapılan Değişiklik:**
+`src/metrics/metrics.js`: kendi `Registry`'si, `metricsMiddleware` (tüm
+route'lardan önce), ve üç custom metrik — `http_requests_total` (Counter),
+`http_request_duration_seconds` (Histogram), `active_db_connections` (Gauge).
+Gauge, pg Pool'un anlık durumunu okumak için `src/db/prisma.js`'e eklenen
+`getPool()` üzerinden `collect()` (pull) ile besleniyor.
+
+**Mimari Karar:**
+En kritik karar `route` label'ında GERÇEK path'i (`/api/items/123`) değil, route
+KALIBINI (`/api/items/:id`) kullanmaktı. Aksi halde her farklı id yeni bir zaman
+serisi (time series) yaratır; bir bot rastgele URL tararsa seri sayısı sınırsız
+büyür ve Prometheus'un belleği şişip çöker — buna "yüksek cardinality" denir ve
+izleme sistemlerinin en yaygın çöküş sebebidir. `req.route` yönlendirme
+tamamlandıktan sonra kalıbı taşır; eşleşmeyen (404) path'leri tek bir `unmatched`
+serisinde topladım. Ayrıca RPS/error-rate gibi türev değerleri metriğin İÇİNE
+gömmedim: bir Counter (sadece artan) tutup, "saniyedeki istek" veya "5xx oranı"nı
+Prometheus tarafında `rate()`/bölme ile SORGU üretiyor — ham veri saklanır,
+yorum sorguya bırakılır.
+
+**Mentör Notu:**
+Metrik tasarımında label seçerken hep sor: "bu label'ın kaç FARKLI değeri
+olabilir?" Sınırlı ve öngörülebilir olmalı (method: ~7, status_code: ~40, route:
+route sayısı kadar). Sınırsız olabilecek şeyleri (id, email, tam URL, timestamp)
+ASLA label yapma. Counter vs Gauge ayrımı da öz: Counter yalnızca artar
+(toplam istek), Gauge anlık artıp azalır (açık bağlantı). Yanlışını seçersen
+`rate()` gibi fonksiyonlar anlamsız sonuç verir.
+
+### 4. `/metrics` erişim koruması + PaaS'te IP filtresinin yanılgısı
+
+**Yapılan Değişiklik:**
+`src/middleware/metricsAccessGuard.js`: iki modlu koruma. `METRICS_TOKEN`
+tanımlıysa bearer token ZORUNLU; yoksa IP allowlist (loopback + özel ağlar +
+`METRICS_ALLOWED_IPS`). Guard'ın karar mantığı için 9 unit test yazıldı;
+`/metrics`'in prom formatı ve token davranışı için integration testler eklendi
+(toplam 43→59 test, coverage %94→%95.96).
+
+**Mimari Karar:**
+TODO "IP whitelist veya ayrı port" diyordu; ben iki katmanlı (defense in depth)
+gittim ve token'ı önerilen yol yaptım. Nedeni önemli bir gerçek: Render gibi bir
+PaaS'te uygulama, reverse-proxy ARKASINDA çalışır ve `trust proxy` ayarlanmadıkça
+daima proxy'nin (özel) IP'sini görür — yani saf IP allowlist orada aldatıcı
+biçimde "hep izin ver"e döner ve `/metrics` fiilen halka açık kalır. Token bu
+tuzağa düşmez. IP filtresini yine de bıraktım çünkü yerel/özel-ağ senaryolarında
+(ör. aynı Docker ağındaki bir scraper) pratiktir.
+
+**Mentör Notu:**
+"Güvenlik kontrolü var" ile "güvenlik kontrolü çalışıyor" farkı (Week 7'deki
+branch-protection dersinin bir kuzeni): bir IP allowlist yazmak kolaydır, ama
+onu doğru çalıştıran şey `req.ip`'in gerçekten istemciyi göstermesidir — bu da
+altyapıya (proxy/trust proxy) bağlıdır. Bir güvenlik mekanizmasını eklerken hep
+"bu, benim gerçek çalışma ortamımda hangi girdiyi görüyor?" diye sor; laboratuvar
+(localhost) ile production (proxy arkası) farklı davranabilir.
+
+### 5. Test edilebilirlik: prisma mock'u bozmadan getPool eklemek
+
+**Yapılan Değişiklik:**
+`active_db_connections` gauge'u pg Pool'a erişmek zorundaydı ama Pool, adapter
+deseni yüzünden `prisma.js` içinde gizliydi. `getPool()` export'u ekledim ve
+gauge'un `collect()`'i prisma modülünü DOSYA TEPESİNDE değil, çağrı anında
+`require('../db/prisma').getPool?.()` ile okuyor.
+
+**Mimari Karar:**
+`collect()` içinde late-require + optional-chaining (`?.`) bilinçli: mevcut
+`tests/unit/health.test.js`, `jest.mock('../../src/db/prisma')` ile prisma'yı
+sahteliyor ve o mock'ta `getPool` yok. Tepede require etsem ve gauge o testte
+tetiklense TypeError alırdım. Gauge yalnızca `/metrics` yoklandığında çalıştığı
+ve o test `/metrics`'e gitmediği için pratikte sorun çıkmazdı — ama savunmacı
+yazmak (kod bir gün başka bir yerden çağrılırsa) doğru refleks.
+
+**Mentör Notu:**
+Yeni bir özellik (metrics), var olan bir test kurgusunu (prisma singleton mock'u)
+sessizce bozabilir. Bir modüle export eklerken "bu modülü kim mock'luyor ve
+mock'unda bu yeni şey var mı?" diye sor. Late-require + `?.` gibi küçük savunmalar,
+DIP/singleton seam'ini koruyarak yeni bağımlılıkları güvenle eklemenin yoludur.
