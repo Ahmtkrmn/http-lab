@@ -18,7 +18,8 @@ kategori bazlı ürünler (`Item`) üzerinde CRUD işlemleri sunar.
 - **Prisma 7 + `@prisma/adapter-pg`**: PostgreSQL ile driver adapter üzerinden, uygulama genelinde **tek bir paylaşılan** bağlantı
 - **Merkezi hata yönetimi** ve **request logging** middleware'leri
 - **Login rate limiting**: `express-rate-limit` ile 15 dakikada IP başına 5 deneme sınırı (test ortamında devre dışı)
-- **%94 test coverage** — 43 test (23 unit + 12 integration + diğer), gerçek bir PostgreSQL test veritabanına karşı çalışır
+- **Observability (Week 8)**: `pino` ile structured (JSON) logging + her isteğe `requestId` (correlation ID); `prom-client` ile Prometheus metrikleri (`/metrics`) — istek sayısı/süresi (P50/P95/P99) ve aktif DB bağlantısı
+- **%95 test coverage** — 59 test (unit + integration), gerçek bir PostgreSQL test veritabanına karşı çalışır
 - Postman koleksiyonu (`http-lab.postman_collection.json`) ile hazır istek örnekleri
 
 ## Teknoloji Yığını
@@ -31,6 +32,8 @@ kategori bazlı ürünler (`Item`) üzerinde CRUD işlemleri sunar.
 | Veritabanı | PostgreSQL (`pg`) |
 | Kimlik Doğrulama | `jsonwebtoken`, `bcrypt` |
 | Test | `jest`, `supertest` |
+| Logging | `pino` (+ `pino-pretty` dev'de) |
+| Metrics | `prom-client` (Prometheus) |
 | Ortam Değişkenleri | `dotenv` |
 | Geliştirme | `nodemon` |
 
@@ -190,10 +193,11 @@ Sunucu varsayılan olarak `http://localhost:3000` adresinde çalışır.
 
 ## API Uç Noktaları
 
-### Health Check
-| Metod | Yol | Açıklama |
-|---|---|---|
-| GET | `/health` | Servisin ayakta olup olmadığını kontrol eder |
+### Health & Observability
+| Metod | Yol | Açıklama | Erişim |
+|---|---|---|---|
+| GET | `/health` | Servisin ve DB bağlantısının canlılığını kontrol eder (200/503) | Herkes |
+| GET | `/metrics` | Prometheus formatında metrikler | Sadece internal (bkz. "Monitoring & Alerting") |
 
 ### Auth (`/api/auth`)
 | Metod | Yol | Açıklama | Not |
@@ -212,6 +216,106 @@ Sunucu varsayılan olarak `http://localhost:3000` adresinde çalışır.
 | DELETE | `/:id` | Ürünü siler | `EDITOR`/`ADMIN`, yalnızca kendi oluşturduğu ürün (ADMIN istisna) |
 
 İstekler `Authorization: Bearer <accessToken>` header'ı ile gönderilmelidir.
+
+---
+
+## Monitoring, Logging & Observability (Week 8)
+
+Bu bölüm, "çalışıyor gibi görünüyor" ile "gerçekten çalışıyor"u ayıran ölçüm
+katmanını belgeler.
+
+### Structured Logging (`pino`)
+
+Tüm loglar `src/utils/logger.js` üzerinden tek bir yapılandırılmış logger'dan
+geçer (`console.log`/`console.error` kullanılmaz):
+
+- **Format:** `NODE_ENV=production`'da tek satırlık **JSON** (log toplayıcıların
+  ayrıştırması için); development'ta `pino-pretty` ile **insan-okur** renkli çıktı.
+- **`requestId` (correlation ID):** Her isteğe bir UUID atanır, yanıtta
+  `X-Request-ID` header'ı olarak döner ve o isteğin ürettiği **tüm** log satırları
+  aynı ID'yi taşır. Gelen istekte zaten `X-Request-ID` varsa korunur (servisler
+  arası iz sürme). Bir hata gördüğünde bu ID ile log'larda o isteğin tüm hikâyesini
+  filtreleyebilirsin.
+
+#### Log Seviyeleri Kuralı
+
+Hangi olayın hangi seviyede loglanacağı bir konvansiyondur; bu proje şunu uygular:
+
+| Seviye | Ne zaman | Örnek |
+|---|---|---|
+| `DEBUG` | Sadece local geliştirme, ayrıntılı akış | Ara adım değerleri, dış çağrı gövdeleri |
+| `INFO` | Önemli iş olayları | Sunucu başladı, login, kayıt, başarılı istek (2xx/3xx) |
+| `WARN` | Beklenmedik ama kurtarılabilir durum | 4xx istekler (401/403/404), kullanıcı bulunamadı |
+| `ERROR` | Exception / başarısız işlem | 5xx istekler, yakalanan hata + stack trace |
+
+`requestLogger` her isteğin özetini **status koduna göre** seviyeler (5xx→error,
+4xx→warn, gerisi→info); `errorHandler` yakalanan hataları stack trace'iyle birlikte
+`error` seviyesinde yazar (stack log'a gider, **istemciye gönderilmez**). Seviye
+`LOG_LEVEL` env'i ile elle geçersiz kılınabilir (varsayılan: prod=`info`,
+dev=`debug`, test=`silent`).
+
+### Metrics (`prom-client`) — `GET /metrics`
+
+Prometheus formatında üç ana custom metrik yayınlanır (+ Node/process default
+metrikleri):
+
+| Metrik | Tip | Ne ölçer |
+|---|---|---|
+| `http_requests_total` | Counter | Toplam istek; `method` + `route` + `status_code` label'ları ile. **Error rate** ve **RPS** bundan `rate()` ile türetilir. |
+| `http_request_duration_seconds` | Histogram | İstek süresi; P50/P95/P99 `histogram_quantile()` ile hesaplanır. |
+| `active_db_connections` | Gauge | pg bağlantı havuzundaki anlık açık bağlantı sayısı (pull anında okunur). |
+
+> **Cardinality notu:** `route` label'ı gerçek path'i (`/api/items/123`) değil,
+> **route kalıbını** (`/api/items/:id`) taşır — aksi halde her id yeni bir zaman
+> serisi yaratıp Prometheus'u şişirirdi (yüksek-cardinality, izleme sistemlerinin
+> en yaygın çöküş sebebi). Eşleşmeyen path'ler (404) tek bir `unmatched` serisinde
+> toplanır.
+
+#### `/metrics` erişim koruması
+
+`/metrics` iç işleyişi dışa döktüğü için halka açık olmamalıdır
+(`src/middleware/metricsAccessGuard.js`). İki mod:
+
+1. **Token modu (önerilen, PaaS-dostu):** `METRICS_TOKEN` env'i tanımlıysa erişim
+   için `Authorization: Bearer <token>` (veya `?token=`) zorunludur.
+2. **IP allowlist modu:** Token yoksa loopback + özel ağlar (10.x / 172.16-31.x /
+   192.168.x) otomatik izinlidir; ek IP'ler `METRICS_ALLOWED_IPS` ile eklenir.
+
+> ⚠️ **Render gibi PaaS'te dikkat:** Uygulama, reverse-proxy arkasında daima
+> proxy'nin (özel) IP'sini görür — `trust proxy` ayarı yapılmadıkça IP filtresi
+> aldatıcı biçimde "hep izin ver"e döner. Bu yüzden production'da gerçek koruma
+> **`METRICS_TOKEN`**'dır.
+
+### Grafana Cloud (ücretsiz tier) — ⚠️ senin yapman gereken kurulum
+
+Bu adımlar bir GitHub/panel kurulumudur, dosyayla yapılamaz:
+
+1. [grafana.com](https://grafana.com/) → ücretsiz Grafana Cloud hesabı aç.
+2. Grafana Cloud, `/metrics`'i çekmek için bir **Grafana Alloy / Agent** (veya
+   hosted Prometheus'un `scrape`/`remote_write` yapılandırması) kullanır. Agent'ı
+   çalıştırıp `scrape_configs` içinde hedefi
+   `https://http-lab.onrender.com/metrics` (ve `METRICS_TOKEN` kullanıyorsan
+   `Authorization: Bearer ...` header'ı) olacak şekilde tanımla; metrikleri
+   Grafana Cloud'un Prometheus endpoint'ine `remote_write` ile ilet.
+3. Grafana'da en az **3 panelli** bir dashboard kur:
+   - **RPS:** `sum(rate(http_requests_total[5m]))`
+   - **Error Rate:** `sum(rate(http_requests_total{status_code=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))`
+   - **P95 Latency:** `histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))`
+4. Dashboard'ın ekran görüntüsünü alıp bu README'ye ekle (`docs/` altına koyup
+   buraya `![Grafana Dashboard](docs/grafana.png)` ile bağla).
+
+### Alerting — UptimeRobot (ücretsiz) — ⚠️ senin yapman gereken kurulum
+
+1. [uptimerobot.com](https://uptimerobot.com/) → ücretsiz hesap aç.
+2. **New Monitor** → tip: HTTP(s), URL: `https://http-lab.onrender.com/health`,
+   izleme aralığı: 5 dakika.
+3. **Alert Contact** olarak e-postanı ekle; servis ~2 dakika yanıt vermezse
+   bildirim gelecek şekilde ayarla.
+4. (Opsiyonel) UptimeRobot'un ücretsiz "status page"ini paylaşabilirsin.
+
+> `/health` sadece process canlılığını değil, `SELECT 1` ile **DB
+> bağlantısını** da kontrol ettiği için (200/503), UptimeRobot bir DB kesintisini
+> de yakalar — süreç ayakta ama DB kopuksa yine alert alırsın.
 
 ---
 
@@ -284,39 +388,43 @@ npm run test:coverage  # coverage raporuyla birlikte
 ### `npm run test:coverage` Çıktısı
 
 ```
-File                 | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
----------------------|---------|----------|---------|---------|-------------------
-All files            |   94.04 |    89.55 |   93.54 |   94.04 |
- src                 |   88.23 |      100 |       0 |   88.23 |
-  app.js             |   88.23 |      100 |       0 |   88.23 | 41,51
- src/db              |     100 |      100 |     100 |     100 |
-  prisma.js          |     100 |      100 |     100 |     100 |
- src/middleware      |     100 |    93.75 |     100 |     100 |
-  authMiddleware.js  |     100 |      100 |     100 |     100 |
-  errorHandler.js    |     100 |       75 |     100 |     100 | 13
-  requestLogger.js   |     100 |      100 |     100 |     100 |
- src/routes          |   90.36 |    93.54 |     100 |   90.36 |
-  auth.js            |   91.42 |    84.61 |     100 |   91.42 | 27,51,89
-  items.js           |   89.58 |      100 |     100 |   89.58 | 18,31,71,81,102
- src/store           |     100 |    71.42 |     100 |     100 |
-  itemsDb.js         |     100 |    71.42 |     100 |     100 | 56,58-72
- src/utils           |     100 |      100 |     100 |     100 |
-  passwordService.js |     100 |      100 |     100 |     100 |
-  tokenService.js    |     100 |      100 |     100 |     100 |
----------------------|---------|----------|---------|---------|-------------------
+File                    | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+------------------------|---------|----------|---------|---------|-------------------
+All files               |   95.96 |    86.36 |    97.5 |   95.91 |
+ src                    |   96.87 |      100 |   66.66 |   96.87 |
+  app.js                |   96.87 |      100 |   66.66 |   96.87 | 91
+ src/db                 |     100 |      100 |     100 |     100 |
+  prisma.js             |     100 |      100 |     100 |     100 |
+ src/metrics            |   94.73 |     62.5 |     100 |   94.73 | 21
+  metrics.js            |   94.73 |     62.5 |     100 |   94.73 |
+ src/middleware         |     100 |    93.22 |     100 |     100 |
+  authMiddleware.js     |     100 |      100 |     100 |     100 |
+  errorHandler.js       |     100 |    66.66 |     100 |     100 | 13,35
+  metricsAccessGuard.js |     100 |    94.28 |     100 |     100 | 15,58
+  requestLogger.js      |     100 |      100 |     100 |     100 |
+ src/routes             |   90.36 |    93.54 |     100 |   90.36 |
+  auth.js               |   91.42 |    84.61 |     100 |   91.42 | 27,51,89
+  items.js              |   89.58 |      100 |     100 |   89.58 | 18,31,71,81,102
+ src/store              |     100 |    71.42 |     100 |     100 |
+  itemsDb.js            |     100 |    71.42 |     100 |     100 | 56,58-72
+ src/utils              |     100 |    68.75 |     100 |     100 |
+  logger.js             |     100 |    58.33 |     100 |     100 | 28-56
+  passwordService.js    |     100 |      100 |     100 |     100 |
+  tokenService.js       |     100 |      100 |     100 |     100 |
+------------------------|---------|----------|---------|---------|-------------------
 
-Test Suites: 5 passed, 5 total
-Tests:       43 passed, 43 total
+Test Suites: 9 passed, 9 total
+Tests:       59 passed, 59 total
 Time:        15.8 s
 ```
 
-**Hedef %80'in üzerinde**: Statements %94.04, Branches %89.55, Functions
-%93.54, Lines %94.04. `package.json` içindeki `jest.coverageThreshold`
+**Hedef %80'in üzerinde**: Statements %95.96, Branches %86.36, Functions
+%97.5, Lines %95.91. `package.json` içindeki `jest.coverageThreshold`
 ayarı (80/70/80/80) `npm run test:coverage` komutunu, eşiklerin altına
 düşülmesi durumunda başarısız (exit code ≠ 0) yapacak şekilde
-yapılandırılmıştır. `src/app.js`'in kalan kapsanmamış satırları
-(`module.exports` civarı) ve `errorHandler.js`'in tek eksik dalı,
-davranışsal olarak önemsiz satırlardır.
+yapılandırılmıştır. `logger.js`'in kapsanmamış dalları, yalnızca
+`NODE_ENV`'e göre (prod/dev/test) değişen format seçimidir — test ortamı
+tek bir dalı çalıştırdığı için diğerleri davranışsal olarak önemsizdir.
 
 ---
 

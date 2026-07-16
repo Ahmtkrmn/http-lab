@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for src/utils/tokenService.js</title>
+    <title>Code coverage report for src/middleware/metricsAccessGuard.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,20 +19,20 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/utils</a> tokenService.js</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/middleware</a> metricsAccessGuard.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>29/29</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">94.28% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>4/4</span>
+                <span class='fraction'>33/35</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>26/26</span>
             </div>
         
             
@@ -116,7 +116,23 @@
 <a name='L51'></a><a href='#L51'>51</a>
 <a name='L52'></a><a href='#L52'>52</a>
 <a name='L53'></a><a href='#L53'>53</a>
-<a name='L54'></a><a href='#L54'>54</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -126,21 +142,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -150,78 +152,124 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">27x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SOLID / SRP notu:
-// Refactor öncesinde JWT üretim/doğrulama mantığı iki farklı yerde,
-// route ve middleware kodunun İÇİNE gömülüydü:
-//   - routes/auth.js  -&gt; login sırasında jwt.sign(...) iki kez satır içinde çağrılıyordu
-//   - middleware/authMiddleware.js -&gt; jwt.verify(...) doğrudan middleware gövdesinde
-// Bu, "token nasıl üretilir/doğrulanır" kuralını Express'in "isteği nasıl
-// işlerim" sorumluluğuyla karıştırıyordu (SRP ihlali) ve token stratejisini
-// (örn. algoritma, expiresIn süresi, secret seçimi) değiştirmek route/middleware
-// kodunun düzenlenmesini gerektiriyordu (OCP ihlali).
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// `/metrics` endpoint'i için erişim koruması.
 //
-// Bu modül token'la ilgili TÜM sorumluluğu tek bir yerde toplar; saf
-// fonksiyonlar (Express req/res'e bağımlı değil) olduğu için dependency
-// olmadan doğrudan unit test edilebilir.
+// Neden gerekli? `/metrics` iç işleyişini (istek hacmi, hata oranları, bağlantı
+// sayıları) dışarı döker. Bu bilgi bir saldırgan için keşif (reconnaissance)
+// değeri taşır ve halka açık olmamalıdır — sadece izleme altyapısı (Prometheus
+// scraper / Grafana Agent) erişebilmeli. TODO Week 8: "IP whitelist veya ayrı port".
+//
+// İki katmanlı savunma sunuyoruz (defense in depth):
+//   1) METRICS_TOKEN tanımlıysa: bir bearer token ZORUNLU (en güçlü, PaaS-dostu).
+//   2) Token yoksa: IP allowlist (loopback + özel ağlar + METRICS_ALLOWED_IPS).
+const logger = require('../utils/logger');
 &nbsp;
-const jwt = require('jsonwebtoken');
-&nbsp;
-const ACCESS_TOKEN_EXPIRY = '15m';
-const REFRESH_TOKEN_EXPIRY = '7d';
-&nbsp;
-function generateAccessToken(payload, secret = process.env.JWT_ACCESS_SECRET) {
-  return jwt.sign(
-    { userId: payload.userId, role: payload.role },
-    secret,
-    { expiresIn: ACCESS_TOKEN_EXPIRY }
-  );
+// IPv6-mapped IPv4 önekini (::ffff:127.0.0.1 -&gt; 127.0.0.1) temizle.
+function normalizeIp(ip) {
+  return (ip || <span class="branch-1 cbranch-no" title="branch not covered" >'')</span>.replace(/^::ffff:/, '');
 }
 &nbsp;
-function generateRefreshToken(payload, secret = process.env.JWT_REFRESH_SECRET) {
-  return jwt.sign(
-    { userId: payload.userId },
-    secret,
-    { expiresIn: REFRESH_TOKEN_EXPIRY }
-  );
+// Loopback ve RFC1918 özel ağ aralıkları — bir scraper tipik olarak aynı host'tan
+// veya özel ağdan gelir, internetten değil.
+function isPrivateOrLoopback(ip) {
+  const addr = normalizeIp(ip);
+  if (addr === '127.0.0.1' || addr === '::1') return true;
+  if (addr.startsWith('10.') || addr.startsWith('192.168.')) return true;
+  // 172.16.0.0 – 172.31.255.255
+  const m = addr.match(/^172\.(\d+)\./);
+  if (m &amp;&amp; Number(m[1]) &gt;= 16 &amp;&amp; Number(m[1]) &lt;= 31) return true;
+  return false;
 }
 &nbsp;
-function verifyAccessToken(token, secret = process.env.JWT_ACCESS_SECRET) {
-  // jwt.verify hata fırlatır (TokenExpiredError, JsonWebTokenError vb.)
-  // Çağıran taraf bunu try/catch ile yakalamalı.
-  return jwt.verify(token, secret);
-}
+const metricsAccessGuard = (req, res, next) =&gt; {
+  const token = process.env.METRICS_TOKEN;
 &nbsp;
-function verifyRefreshToken(token, secret = process.env.JWT_REFRESH_SECRET) {
-  return jwt.verify(token, secret);
-}
+  // 1) Token modu: METRICS_TOKEN tanımlıysa doğru token OLMADAN geçiş yok.
+  // Bu, Render gibi PaaS'lerde IP filtrelemesinin güvenilmez olduğu durumlar için
+  // (aşağıdaki nota bak) daha sağlam bir seçenektir.
+  if (token) {
+    const header = req.headers.authorization || '';
+    const provided = header.replace(/^Bearer\s+/i, '') || req.query.token;
+    if (provided !== token) {
+      (req.log || logger).warn('metrics erişimi reddedildi (geçersiz token)');
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    return next();
+  }
 &nbsp;
-module.exports = {
-  ACCESS_TOKEN_EXPIRY,
-  REFRESH_TOKEN_EXPIRY,
-  generateAccessToken,
-  generateRefreshToken,
-  verifyAccessToken,
-  verifyRefreshToken,
+  // 2) IP allowlist modu.
+  // ⚠️ Güvenlik notu: `req.ip`'in doğru olması Express'in `trust proxy` ayarına
+  // bağlıdır. Render gibi bir reverse-proxy ARKASINDA, trust proxy açık değilse
+  // uygulama daima proxy'nin (özel) IP'sini görür — yani IP filtresi orada
+  // aldatıcı biçimde "hep izin ver"e döner. Bu yüzden production/Render için
+  // gerçek koruma METRICS_TOKEN'dır; IP allowlist esas olarak yerel/özel-ağ
+  // senaryoları içindir.
+  const allowList = (process.env.METRICS_ALLOWED_IPS || '')
+    .split(',')
+    .map((s) =&gt; s.trim())
+    .filter(Boolean);
+&nbsp;
+  const clientIp = normalizeIp(req.ip || <span class="branch-1 cbranch-no" title="branch not covered" >req.socket?.remoteAddress)</span>;
+  const allowed = isPrivateOrLoopback(clientIp) || allowList.includes(clientIp);
+&nbsp;
+  if (!allowed) {
+    (req.log || logger).warn({ clientIp }, 'metrics erişimi reddedildi (IP izinli değil)');
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+&nbsp;
+  next();
 };
+&nbsp;
+module.exports = metricsAccessGuard;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->

@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for src/utils/tokenService.js</title>
+    <title>Code coverage report for src/utils/logger.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/utils</a> tokenService.js</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/utils</a> logger.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">58.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>4/4</span>
+                <span class='fraction'>7/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/4</span>
+                <span class='fraction'>0/0</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
@@ -116,7 +116,13 @@
 <a name='L51'></a><a href='#L51'>51</a>
 <a name='L52'></a><a href='#L52'>52</a>
 <a name='L53'></a><a href='#L53'>53</a>
-<a name='L54'></a><a href='#L54'>54</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -130,22 +136,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">22x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">20x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -154,14 +158,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">27x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -169,59 +169,77 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SOLID / SRP notu:
-// Refactor öncesinde JWT üretim/doğrulama mantığı iki farklı yerde,
-// route ve middleware kodunun İÇİNE gömülüydü:
-//   - routes/auth.js  -&gt; login sırasında jwt.sign(...) iki kez satır içinde çağrılıyordu
-//   - middleware/authMiddleware.js -&gt; jwt.verify(...) doğrudan middleware gövdesinde
-// Bu, "token nasıl üretilir/doğrulanır" kuralını Express'in "isteği nasıl
-// işlerim" sorumluluğuyla karıştırıyordu (SRP ihlali) ve token stratejisini
-// (örn. algoritma, expiresIn süresi, secret seçimi) değiştirmek route/middleware
-// kodunun düzenlenmesini gerektiriyordu (OCP ihlali).
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Uygulama genelinde TEK paylaşılan structured logger (pino).
 //
-// Bu modül token'la ilgili TÜM sorumluluğu tek bir yerde toplar; saf
-// fonksiyonlar (Express req/res'e bağımlı değil) olduğu için dependency
-// olmadan doğrudan unit test edilebilir.
+// Neden `console.log` değil de pino?
+// `console.log` düz metin (string) üretir. Bir string log satırı, insan gözüyle
+// okumak için uygundur ama bir izleme aracının (Grafana Loki, Datadog, CloudWatch)
+// bunu ayrıştırıp "status_code=500 olan istekleri getir" gibi sorgular çalıştırması
+// çok zordur. pino ise her log satırını tek satırlık bir JSON nesnesi olarak yazar
+// (structured logging) — makineler bunu doğrudan alanlara (field) ayırıp
+// filtreleyebilir/aggregate edebilir. Week 8'in özü tam olarak budur:
+// "çalışıyor gibi görünüyor" ile "ölçebiliyorum" arasındaki fark.
+//
+// Neden tek bir paylaşılan örnek (singleton)?
+// Aynı `src/db/prisma.js`'teki mantık: logger'ın seviyesi, formatı ve hedefi
+// TEK yerde kararlaştırılsın; her modül `require('../utils/logger')` ile aynı
+// yapılandırılmış örneği alsın. Bir modül kendi logger'ını kurarsa formatlar
+// birbirinden sapar.
+const pino = require('pino');
 &nbsp;
-const jwt = require('jsonwebtoken');
+const isProduction = process.env.NODE_ENV === 'production';
+const isTest = process.env.NODE_ENV === 'test';
 &nbsp;
-const ACCESS_TOKEN_EXPIRY = '15m';
-const REFRESH_TOKEN_EXPIRY = '7d';
+// Log seviyesi (öncelik sırası):
+//   1) LOG_LEVEL env (elle geçersiz kılma imkânı)
+//   2) test  -&gt; 'silent' : testlerin çıktısını log gürültüsüyle kirletme
+//   3) prod  -&gt; 'info'   : DEBUG gürültüsü production'a gitmesin
+//   4) dev   -&gt; 'debug'  : yerelde ayrıntılı akışı gör
+const level =
+  process.env.LOG_LEVEL || (isTest ? 'silent' : <span class="branch-1 cbranch-no" title="branch not covered" >isProduction ? 'info' : 'debug')</span>;
 &nbsp;
-function generateAccessToken(payload, secret = process.env.JWT_ACCESS_SECRET) {
-  return jwt.sign(
-    { userId: payload.userId, role: payload.role },
-    secret,
-    { expiresIn: ACCESS_TOKEN_EXPIRY }
-  );
-}
+// Mimari karar: production'da SAF JSON, development'ta insan-okur (pretty) format.
+//
+// `pino-pretty` renklendirilmiş, hizalanmış, okunması kolay satırlar üretir ama
+// bunu bir "transport" (ayrı worker thread) üzerinden yapar ve JSON'u bozar —
+// yani makine tarafından ayrıştırılamaz. Bu yüzden pretty format SADECE
+// development'ta açılır. Production'da ve test'te transport tanımlanmaz; pino
+// varsayılan olarak stdout'a tek satırlık JSON yazar. Bir container ortamında
+// (Docker/Render) doğru davranış budur: uygulama sadece stdout'a yazar, log'ları
+// toplama/saklama işini platform (veya Grafana Agent) üstlenir — "12-factor app"
+// prensibi (logs as event streams).
+const logger = pino({
+  level,
+  // Development dışında transport yok -&gt; düz JSON stdout.
+  transport:
+    isProduction || isTest
+      ? undefined
+      : <span class="branch-1 cbranch-no" title="branch not covered" >{</span>
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'SYS:standard',
+            ignore: 'pid,hostname',
+          },
+        },
+  // Production JSON'unda zaman damgası okunabilir ISO-8601 olsun (pino'nun
+  // varsayılanı epoch milisaniyedir; log toplayıcılar ISO'yu daha rahat parse eder).
+  ...(isProduction ? <span class="branch-0 cbranch-no" title="branch not covered" >{ timestamp: pino.stdTimeFunctions.isoTime } </span>: {}),
+});
 &nbsp;
-function generateRefreshToken(payload, secret = process.env.JWT_REFRESH_SECRET) {
-  return jwt.sign(
-    { userId: payload.userId },
-    secret,
-    { expiresIn: REFRESH_TOKEN_EXPIRY }
-  );
-}
-&nbsp;
-function verifyAccessToken(token, secret = process.env.JWT_ACCESS_SECRET) {
-  // jwt.verify hata fırlatır (TokenExpiredError, JsonWebTokenError vb.)
-  // Çağıran taraf bunu try/catch ile yakalamalı.
-  return jwt.verify(token, secret);
-}
-&nbsp;
-function verifyRefreshToken(token, secret = process.env.JWT_REFRESH_SECRET) {
-  return jwt.verify(token, secret);
-}
-&nbsp;
-module.exports = {
-  ACCESS_TOKEN_EXPIRY,
-  REFRESH_TOKEN_EXPIRY,
-  generateAccessToken,
-  generateRefreshToken,
-  verifyAccessToken,
-  verifyRefreshToken,
-};
+module.exports = logger;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->

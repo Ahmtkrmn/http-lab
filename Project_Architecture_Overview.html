@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="tr">
 <head>
@@ -5,327 +6,234 @@
 <title>http-lab — Proje Mimarisi ve Teknoloji Envanteri</title>
 <style>
   :root {
-    --paper: #fbfcfc;
-    --paper-alt: #eef4f3;
-    --ink: #10181a;
-    --muted: #4d6360;
-    --line: #d7e3e1;
-    --accent: #0f6e6a;
-    --accent-soft: #e2f3f1;
-    --accent-ink: #06201d;
-    --good: #1a7f4f;
-    --warn: #92660a;
-    --danger: #b3261e;
-    --code-bg: #eef4f3;
-    --stripe: #f3f8f7;
-    --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Liberation Mono", monospace;
-    --font-body: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Segoe UI", serif;
+    --bg: #ffffff;
+    --bg-alt: #f6f8fa;
+    --text: #1f2328;
+    --text-muted: #57606a;
+    --border: #d0d7de;
+    --accent: #0969da;
+    --accent-bg: #ddf4ff;
+    --code-bg: #f6f8fa;
+    --success: #1a7f37;
+    --warning: #9a6700;
+    --danger: #cf222e;
+    --table-stripe: #f6f8fa;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --paper: #0a1312;
-      --paper-alt: #101c1b;
-      --ink: #e6efed;
-      --muted: #8fa8a4;
-      --line: #1f3634;
-      --accent: #4fd1c5;
-      --accent-soft: #10302d;
-      --accent-ink: #d7fbf6;
-      --good: #3ecf8e;
-      --warn: #dba43c;
-      --danger: #f2726b;
-      --code-bg: #0e1a19;
-      --stripe: #0e1a19;
+      --bg: #0d1117;
+      --bg-alt: #161b22;
+      --text: #e6edf3;
+      --text-muted: #9198a1;
+      --border: #30363d;
+      --accent: #4493f8;
+      --accent-bg: #0c2d6b;
+      --code-bg: #161b22;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger: #f85149;
+      --table-stripe: #161b22;
     }
   }
-  :root[data-theme="dark"] {
-    --paper: #0a1312;
-    --paper-alt: #101c1b;
-    --ink: #e6efed;
-    --muted: #8fa8a4;
-    --line: #1f3634;
-    --accent: #4fd1c5;
-    --accent-soft: #10302d;
-    --accent-ink: #d7fbf6;
-    --good: #3ecf8e;
-    --warn: #dba43c;
-    --danger: #f2726b;
-    --code-bg: #0e1a19;
-    --stripe: #0e1a19;
-  }
-  :root[data-theme="light"] {
-    --paper: #fbfcfc;
-    --paper-alt: #eef4f3;
-    --ink: #10181a;
-    --muted: #4d6360;
-    --line: #d7e3e1;
-    --accent: #0f6e6a;
-    --accent-soft: #e2f3f1;
-    --accent-ink: #06201d;
-    --good: #1a7f4f;
-    --warn: #92660a;
-    --danger: #b3261e;
-    --code-bg: #eef4f3;
-    --stripe: #f3f8f7;
-  }
-
   * { box-sizing: border-box; }
-  html { color-scheme: light dark; }
   body {
-    font-family: var(--font-body);
-    background: var(--paper);
-    color: var(--ink);
-    line-height: 1.65;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
     margin: 0;
-    padding: 0 0 5rem 0;
-    -webkit-font-smoothing: antialiased;
+    padding: 0 0 4rem 0;
   }
-  .wrap { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
-
-  a { color: var(--accent); }
-  a:focus-visible, button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 1.5rem; }
+  header.hero {
+    background: linear-gradient(135deg, var(--accent-bg), var(--bg));
+    border-bottom: 1px solid var(--border);
+    padding: 3rem 0 2rem 0;
+    margin-bottom: 2rem;
   }
-
-  header.masthead {
-    border-bottom: 1px solid var(--line);
-    padding: 2.75rem 0 1.75rem 0;
-    margin-bottom: 2.5rem;
+  header.hero h1 {
+    margin: 0 0 0.4rem 0;
+    font-size: 2rem;
   }
-  header.masthead .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin: 0 0 0.9rem 0;
-  }
-  header.masthead h1 {
-    font-family: var(--font-mono);
-    font-weight: 600;
-    font-size: 1.7rem;
-    line-height: 1.35;
-    margin: 0 0 0.6rem 0;
-    text-wrap: balance;
-    letter-spacing: -0.01em;
-  }
-  header.masthead p.subtitle {
-    margin: 0 0 1.25rem 0;
-    color: var(--muted);
+  header.hero p.subtitle {
+    margin: 0;
+    color: var(--text-muted);
     font-size: 1.05rem;
-    max-width: 62ch;
   }
-  .stack-strip {
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    color: var(--muted);
+  .meta-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0 0.6rem;
+    gap: 0.5rem;
+    margin-top: 1rem;
   }
-  .stack-strip span:not(:last-child)::after {
-    content: "·";
-    margin-left: 0.6rem;
-    color: var(--line);
+  .badge {
+    display: inline-block;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.2rem 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
   }
-
   nav.toc {
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--accent);
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
     padding: 1rem 1.5rem;
-    margin-bottom: 3rem;
+    margin-bottom: 2.5rem;
   }
-  nav.toc h2 {
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    font-weight: 600;
-  }
-  nav.toc ol {
-    margin: 0.6rem 0 0 0;
-    padding-left: 1.3rem;
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-  }
-  nav.toc li { margin-bottom: 0.25rem; }
-  nav.toc a { text-decoration: none; }
+  nav.toc h2 { margin-top: 0; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+  nav.toc ol { margin: 0.5rem 0 0 0; padding-left: 1.2rem; }
+  nav.toc a { color: var(--accent); text-decoration: none; }
   nav.toc a:hover { text-decoration: underline; }
 
-  section { margin-bottom: 3.25rem; }
+  section { margin-bottom: 3rem; }
   h2 {
-    font-family: var(--font-mono);
-    font-size: 1.3rem;
-    font-weight: 600;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 0.6rem;
-    margin: 0 0 1.25rem 0;
-    text-wrap: balance;
+    font-size: 1.5rem;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0.5rem;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
   h2 .num {
     color: var(--accent);
     font-variant-numeric: tabular-nums;
-    margin-right: 0.35rem;
   }
-  h3 {
-    font-family: var(--font-mono);
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 2.25rem 0 0.9rem 0;
-    color: var(--ink);
-  }
-  p { color: var(--ink); max-width: 68ch; }
-  p.wide { max-width: none; }
+  h3 { font-size: 1.15rem; margin-top: 2rem; }
+  p { color: var(--text); }
 
-  .table-wrap { overflow-x: auto; margin: 1rem 0 1.75rem 0; }
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
-    min-width: 560px;
+    margin: 1rem 0 1.5rem 0;
+    font-size: 0.92rem;
   }
   caption {
     text-align: left;
-    font-family: var(--font-mono);
     font-weight: 600;
-    font-size: 0.85rem;
-    margin-bottom: 0.6rem;
-    color: var(--accent);
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
   }
   th, td {
-    border-bottom: 1px solid var(--line);
-    padding: 0.65rem 0.9rem 0.65rem 0;
+    border: 1px solid var(--border);
+    padding: 0.6rem 0.8rem;
     text-align: left;
     vertical-align: top;
   }
   th {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted);
+    background: var(--bg-alt);
     font-weight: 600;
-    border-bottom: 1px solid var(--ink);
     white-space: nowrap;
   }
-  tbody tr:hover { background: var(--stripe); }
+  tbody tr:nth-child(even) { background: var(--table-stripe); }
 
   code, .path {
-    font-family: var(--font-mono);
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
     background: var(--code-bg);
-    border: 1px solid var(--line);
-    border-radius: 3px;
-    padding: 0.05rem 0.35rem;
-    font-size: 0.87em;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.88em;
     white-space: nowrap;
-    color: var(--ink);
   }
   pre {
     background: var(--code-bg);
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--accent);
-    border-radius: 0 6px 6px 0;
-    padding: 1.1rem 1.3rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
     overflow-x: auto;
-    font-size: 0.82rem;
-    line-height: 1.55;
+    font-size: 0.85rem;
+    line-height: 1.5;
   }
   pre code { background: none; border: none; padding: 0; white-space: pre; }
 
-  .pipeline {
+  .flow {
     display: flex;
     flex-wrap: wrap;
-    align-items: stretch;
-    gap: 0.5rem;
-    margin: 1.25rem 0;
-    font-family: var(--font-mono);
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin: 1rem 0;
+    overflow-x: auto;
   }
-  .pipeline .step {
-    background: var(--paper-alt);
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 0.55rem 0.9rem;
-    font-size: 0.8rem;
-  }
-  .pipeline .step b { display: block; font-weight: 600; }
-  .pipeline .step small { color: var(--muted); font-size: 0.75rem; }
-  .pipeline .arrow {
-    color: var(--accent);
-    font-size: 1rem;
-    align-self: center;
-  }
-
-  dl.decisions {
-    display: grid;
-    grid-template-columns: minmax(180px, 220px) 1fr;
-    gap: 0.75rem 1.5rem;
-    margin: 1.25rem 0;
-    padding-top: 1rem;
-    border-top: 1px solid var(--line);
-  }
-  dl.decisions dt {
-    font-family: var(--font-mono);
-    font-weight: 600;
+  .flow .step {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.85rem;
     font-size: 0.85rem;
-    color: var(--accent);
+    white-space: nowrap;
   }
-  dl.decisions dd {
-    margin: 0 0 0.9rem 0;
-    padding-bottom: 0.9rem;
-    border-bottom: 1px solid var(--line);
-    font-size: 0.92rem;
-    color: var(--muted);
-  }
-  dl.decisions dd:last-of-type { border-bottom: none; }
+  .flow .arrow { color: var(--text-muted); font-size: 1.1rem; }
 
   .callout {
-    border-left: 3px solid var(--accent);
-    background: var(--accent-soft);
-    padding: 1rem 1.3rem;
-    margin: 1.25rem 0;
+    border-left: 4px solid var(--accent);
+    background: var(--accent-bg);
+    padding: 0.9rem 1.2rem;
+    border-radius: 0 8px 8px 0;
+    margin: 1rem 0;
     font-size: 0.92rem;
   }
-  .callout.warn { border-left-color: var(--warn); background: transparent; border: 1px solid var(--line); border-left: 3px solid var(--warn); }
-  .callout strong {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
-    color: var(--ink);
+  .callout.warn { border-left-color: var(--warning); }
+  .callout strong { display: block; margin-bottom: 0.25rem; }
+
+  .grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
   }
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    background: var(--bg-alt);
+  }
+  .card h4 { margin: 0 0 0.4rem 0; font-size: 0.95rem; }
+  .card p { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
+
+  .tag { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.1rem 0.5rem; border-radius: 4px; font-weight: 600; }
+  .tag.done { background: rgba(26,127,55,0.15); color: var(--success); }
+  .tag.open { background: rgba(154,103,0,0.15); color: var(--warning); }
 
   footer {
     margin-top: 4rem;
     padding-top: 1.5rem;
-    border-top: 1px solid var(--line);
-    color: var(--muted);
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
     font-size: 0.85rem;
   }
-  footer code { white-space: normal; }
 
-  @media (max-width: 640px) {
-    dl.decisions { grid-template-columns: 1fr; }
-    dl.decisions dt { margin-bottom: -0.3rem; }
+  @media (max-width: 600px) {
+    .flow { flex-direction: column; align-items: stretch; }
+    .flow .arrow { text-align: center; transform: rotate(90deg); }
   }
 </style>
 </head>
 <body>
 
-<div class="wrap">
-
-<header class="masthead">
-  <p class="eyebrow">Teknik Referans · http-lab</p>
-  <h1>Proje Mimarisi ve Teknoloji Envanteri</h1>
-  <p class="subtitle">Express 5 + Prisma 7 + PostgreSQL üzerine kurulu, JWT/RBAC destekli, CI/CD ile Render'a otomatik deploy edilen bir REST API'nin yığın, mimari ve veri akışı dökümü.</p>
-  <p class="stack-strip">
-    <span>Node.js 20/24</span><span>Express 5.2.1</span><span>Prisma 7.8.0</span><span>PostgreSQL 15</span><span>Docker</span><span>GitHub Actions</span><span>Render — canlı</span>
-  </p>
+<header class="hero">
+  <div class="wrap">
+    <h1>http-lab — Proje Mimarisi ve Teknoloji Envanteri</h1>
+    <p class="subtitle">Express 5 + Prisma 7 + PostgreSQL üzerine kurulu, JWT/RBAC destekli, CI/CD ile Render'a otomatik deploy edilen bir REST API.</p>
+    <div class="meta-row">
+      <span class="badge">Node.js 20/24</span>
+      <span class="badge">Express 5.2.1</span>
+      <span class="badge">Prisma 7.8.0</span>
+      <span class="badge">PostgreSQL 15</span>
+      <span class="badge">Docker</span>
+      <span class="badge">GitHub Actions</span>
+      <span class="badge">Render (canlı)</span>
+    </div>
+  </div>
 </header>
+
+<div class="wrap">
 
 <nav class="toc">
   <h2>İçindekiler</h2>
@@ -339,10 +247,9 @@
 </nav>
 
 <section id="tech-stack">
-  <h2><span class="num">1.</span>Teknoloji Yığını (Tech Stack)</h2>
+  <h2><span class="num">1.</span> Teknoloji Yığını (Tech Stack)</h2>
   <p>Projede kullanılan ana teknolojiler ve her birinin projedeki kritik görevi:</p>
 
-  <div class="table-wrap">
   <table>
     <caption>Çekirdek Runtime &amp; Framework</caption>
     <thead>
@@ -354,9 +261,7 @@
       <tr><td><code>CommonJS</code> (<code>require</code>/<code>module.exports</code>)</td><td>—</td><td>Modül sistemi; <code>package.json</code>'da <code>"type":"commonjs"</code> ile sabitlenmiş.</td></tr>
     </tbody>
   </table>
-  </div>
 
-  <div class="table-wrap">
   <table>
     <caption>Veri Katmanı</caption>
     <thead>
@@ -369,9 +274,7 @@
       <tr><td><code>PostgreSQL</code></td><td>15-alpine</td><td>Birincil ilişkisel veritabanı; Docker'da veya Render'da (managed) çalışır.</td></tr>
     </tbody>
   </table>
-  </div>
 
-  <div class="table-wrap">
   <table>
     <caption>Kimlik Doğrulama &amp; Güvenlik</caption>
     <thead>
@@ -383,9 +286,7 @@
       <tr><td><code>express-rate-limit</code></td><td>^8.5.2</td><td>Login endpoint'inde brute-force koruması (15dk'da IP başına 5 deneme).</td></tr>
     </tbody>
   </table>
-  </div>
 
-  <div class="table-wrap">
   <table>
     <caption>Test, Kalite &amp; Ortam</caption>
     <thead>
@@ -399,9 +300,7 @@
       <tr><td><code>nodemon</code></td><td>^3.1.14</td><td>Yerel geliştirmede (<code>npm run dev</code>) dosya değişikliğinde otomatik yeniden başlatma.</td></tr>
     </tbody>
   </table>
-  </div>
 
-  <div class="table-wrap">
   <table>
     <caption>Altyapı, CI/CD &amp; Deployment</caption>
     <thead>
@@ -415,24 +314,23 @@
       <tr><td><code>Adminer</code></td><td>DB yönetim arayüzü</td><td>Yerel geliştirmede veritabanını tarayıcıdan (<code>:8080</code>) görsel olarak inceleme.</td></tr>
     </tbody>
   </table>
-  </div>
 </section>
 
 <section id="architecture">
-  <h2><span class="num">2.</span>Mimari Yapı</h2>
+  <h2><span class="num">2.</span> Mimari Yapı</h2>
 
-  <p>Proje, klasik bir <strong>katmanlı (layered) mimari</strong> izler: her katman yalnızca bir sorumluluğa sahiptir ve bir alttaki katmanı soyutlama üzerinden kullanır (SOLID — bkz. <code>REFACTORING_DIARY.md</code>). Katmanlar arası bağımlılık her zaman tek yönlüdür.</p>
+  <p>Proje, klasik bir <strong>katmanlı (layered) mimari</strong> izler: her katman yalnızca bir sorumluluğa sahiptir ve bir alttaki katmanı soyutlama üzerinden kullanır (SOLID — bkz. <code>REFACTORING_DIARY.md</code>). Katmanlar arası bağımlılık her zaman tek yönlüdür: <em>Route → Middleware → Service/Util → Data Access → Database</em>.</p>
 
-  <div class="pipeline">
-    <span class="step"><b>Route</b><small>routes/</small></span>
+  <div class="flow">
+    <span class="step">Route<br><small>(routes/)</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>Middleware</b><small>auth, log, error</small></span>
+    <span class="step">Middleware<br><small>(auth, log, error)</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>Service/Util</b><small>token, password</small></span>
+    <span class="step">Service/Util<br><small>(token, password)</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>Data Access</b><small>store/, db/</small></span>
+    <span class="step">Data Access<br><small>(store/, db/)</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>PostgreSQL</b></span>
+    <span class="step">PostgreSQL</span>
   </div>
 
   <h3>Klasör Yapısı ve Her Katmanın Görevi</h3>
@@ -464,26 +362,30 @@
 </code></pre>
 
   <h3>Neden Bu Yapı? (Mimari Kararların Özeti)</h3>
-  <dl class="decisions">
-    <dt>app.js / server.js ayrımı</dt>
-    <dd>"Neyi inşa ediyorum" ile "nasıl çalıştırıyorum" birbirinden ayrıldı — <code>app.js</code>'i test dosyalarından <code>require</code> etmek gerçek bir ağ portu açmıyor (Supertest bunu kullanır).</dd>
-
-    <dt>Tek Prisma Singleton</dt>
-    <dd><code>db/prisma.js</code> tüm modüllerin paylaştığı tek bağlantı havuzunu üretir (DIP) — eskiden iki ayrı bağlantı havuzu açılıyordu, bu kaldırıldı.</dd>
-
-    <dt>İki Katmanlı Auth</dt>
-    <dd><code>authenticateToken</code> (kimlik) → <code>requireRole</code> (yetki) sırasıyla çalışır; ownership kontrolü ise route seviyesinde (<code>items.js</code> içinde) ayrıca yapılır.</dd>
-
-    <dt>Docker-first Yerel Geliştirme</dt>
-    <dd><code>docker compose up --build</code> asıl çalıştırma yöntemi kabul edildi — production'daki (Render) container davranışıyla birebir eşleşir.</dd>
-  </dl>
+  <div class="grid-cards">
+    <div class="card">
+      <h4>app.js / server.js ayrımı</h4>
+      <p>"Neyi inşa ediyorum" ile "nasıl çalıştırıyorum" birbirinden ayrıldı — <code>app.js</code>'i test dosyalarından <code>require</code> etmek gerçek bir ağ portu açmıyor (Supertest bunu kullanır).</p>
+    </div>
+    <div class="card">
+      <h4>Tek Prisma Singleton</h4>
+      <p><code>db/prisma.js</code> tüm modüllerin paylaştığı tek bağlantı havuzunu üretir (DIP) — eskiden iki ayrı bağlantı havuzu açılıyordu, bu kaldırıldı.</p>
+    </div>
+    <div class="card">
+      <h4>İki Katmanlı Auth</h4>
+      <p><code>authenticateToken</code> (kimlik) → <code>requireRole</code> (yetki) sırasıyla çalışır; ownership kontrolü ise route seviyesinde (<code>items.js</code> içinde) ayrıca yapılır.</p>
+    </div>
+    <div class="card">
+      <h4>Docker-first Yerel Geliştirme</h4>
+      <p><code>docker compose up --build</code> asıl çalıştırma yöntemi kabul edildi — production'daki (Render) container davranışıyla birebir eşleşir.</p>
+    </div>
+  </div>
 </section>
 
 <section id="usage">
-  <h2><span class="num">3.</span>Somut Kullanım Örnekleri</h2>
+  <h2><span class="num">3.</span> Somut Kullanım Örnekleri</h2>
   <p>Her teknolojinin projede fiilen kullanıldığı en önemli dosya/satır referansları:</p>
 
-  <div class="table-wrap">
   <table>
     <thead>
       <tr><th>Teknoloji</th><th>Dosya / Yol</th><th>Ne Yapıyor?</th></tr>
@@ -576,77 +478,75 @@
       </tr>
     </tbody>
   </table>
-  </div>
 </section>
 
 <section id="dataflow">
-  <h2><span class="num">4.</span>Veri Akışı</h2>
+  <h2><span class="num">4.</span> Veri Akışı</h2>
 
   <h3>4.1 — Yazma İsteği: <code>POST /api/items</code></h3>
-  <div class="pipeline">
-    <span class="step"><b>İstemci</b><small>Bearer token + JSON body</small></span>
+  <div class="flow">
+    <span class="step">İstemci<br><small>Bearer token + JSON body</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>app.js</b><small>express.json() + requestLogger</small></span>
+    <span class="step">app.js<br><small>express.json() + requestLogger</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>items.js router</b></span>
+    <span class="step">items.js router</span>
     <span class="arrow">→</span>
-    <span class="step"><b>authenticateToken</b></span>
+    <span class="step">authMiddleware<br><small>authenticateToken</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>requireRole('EDITOR')</b></span>
+    <span class="step">authMiddleware<br><small>requireRole('EDITOR')</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>route handler</b><small>validasyon</small></span>
+    <span class="step">route handler<br><small>validasyon</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>itemsDb.create()</b></span>
+    <span class="step">itemsDb.create()</span>
     <span class="arrow">→</span>
-    <span class="step"><b>Prisma Client</b></span>
+    <span class="step">Prisma Client</span>
     <span class="arrow">→</span>
-    <span class="step"><b>PostgreSQL</b></span>
+    <span class="step">PostgreSQL</span>
   </div>
   <p>Hata durumunda (örn. geçersiz <code>categoryId</code>), akış <code>next(err)</code> ile <strong>doğrudan <code>errorHandler.js</code>'e</strong> atlar — ara katmanlar hata formatlamayla ilgilenmez.</p>
 
   <h3>4.2 — Kimlik Doğrulama Akışı: <code>POST /api/auth/login</code></h3>
-  <div class="pipeline">
-    <span class="step"><b>İstemci</b><small>email + password</small></span>
+  <div class="flow">
+    <span class="step">İstemci<br><small>email + password</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>auth.js</b><small>loginLimiter</small></span>
+    <span class="step">auth.js<br><small>loginLimiter</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>prisma.user.findUnique</b></span>
+    <span class="step">prisma.user.findUnique</span>
     <span class="arrow">→</span>
-    <span class="step"><b>passwordService</b><small>comparePassword</small></span>
+    <span class="step">passwordService<br><small>comparePassword</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>tokenService</b><small>generate*Token</small></span>
+    <span class="step">tokenService<br><small>generate*Token</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>prisma.user.update</b><small>refreshToken kaydı</small></span>
+    <span class="step">prisma.user.update<br><small>refreshToken kaydı</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>İstemci</b><small>accessToken + refreshToken</small></span>
+    <span class="step">İstemci<br><small>accessToken + refreshToken</small></span>
   </div>
   <p>Sonraki tüm isteklerde istemci <code>accessToken</code>'ı <code>Authorization: Bearer &lt;token&gt;</code> header'ında gönderir; <code>authMiddleware.js</code> bunu <code>tokenService.verifyAccessToken</code> ile doğrulayıp <code>req.user = { userId, role }</code> olarak zincire enjekte eder.</p>
 
   <h3>4.3 — Deployment Akışı (CI/CD)</h3>
-  <div class="pipeline">
-    <span class="step"><b>git push</b><small>main'e merge</small></span>
+  <div class="flow">
+    <span class="step">git push<br><small>main'e merge</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>ci.yml</b><small>lint + test + build (paralel)</small></span>
+    <span class="step">ci.yml<br><small>lint + test + build (paralel)</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>deploy.yml</b><small>Render deploy hook (curl -sf)</small></span>
+    <span class="step">deploy.yml<br><small>Render deploy hook (curl -sf)</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>Render</b><small>Dockerfile build + çalıştır</small></span>
+    <span class="step">Render<br><small>Dockerfile build + çalıştır</small></span>
     <span class="arrow">→</span>
-    <span class="step"><b>smoke test</b><small>GET /health → 200 bekle</small></span>
+    <span class="step">smoke test<br><small>GET /health → 200 bekle</small></span>
   </div>
   <p>Render tarafında konteyner ayağa kalkarken <code>Dockerfile</code>'daki <code>CMD ["sh","-c","npx prisma migrate deploy && npm start"]</code> otomatik olarak bekleyen migration'ları uygular, sonra sunucuyu <code>process.env.PORT</code> (Render'ın enjekte ettiği) üzerinde başlatır.</p>
 
   <div class="callout">
-    <strong>Health Check'in Çift Rolü</strong>
-    <p class="wide"><code>GET /health</code> (<code>src/app.js</code>) hem CD pipeline'ının smoke test'i hem de (Week 8'de) UptimeRobot gibi bir dış izleme aracının hedefi olacak. <code>prisma.$queryRaw\`SELECT 1\`</code> ile gerçek DB bağlantısını test eder; başarısız olursa <code>503</code> + <code>db:"disconnected"</code> döner.</p>
+    <strong>Health Check'in çift rolü</strong>
+    <code>GET /health</code> (<code>src/app.js</code>) hem CD pipeline'ının smoke test'i hem de (Week 8'de) UptimeRobot gibi bir dış izleme aracının hedefi olacak. <code>prisma.$queryRaw\`SELECT 1\`</code> ile gerçek DB bağlantısını test eder; başarısız olursa <code>503</code> + <code>db:"disconnected"</code> döner.
   </div>
 </section>
 
 <section id="config">
-  <h2><span class="num">5.</span>Kritik Konfigürasyonlar</h2>
+  <h2><span class="num">5.</span> Kritik Konfigürasyonlar</h2>
   <p>Uygulamanın ayakta kalmasını, doğru ortamda doğru şekilde çalışmasını sağlayan temel dosyalar:</p>
 
-  <div class="table-wrap">
   <table>
     <thead>
       <tr><th>Dosya</th><th>Görevi</th><th>Dikkat Edilmesi Gereken</th></tr>
@@ -704,11 +604,10 @@
       </tr>
     </tbody>
   </table>
-  </div>
 
   <div class="callout warn">
-    <strong>Bilinen Açık Noktalar</strong>
-    <p class="wide"><code>PUT</code>/<code>PATCH /api/items/:id</code> henüz ownership kontrolü yapmıyor (sadece <code>DELETE</code> yapıyor). <code>main</code> branch protection kuralı admin bypass'ına açık — henüz "require status checks" zorunlu değil. Detaylar için <code>TODO.md</code> ve <code>LEARNING_LOG.md</code>'ye bakın.</p>
+    <strong>Bilinen açık noktalar</strong>
+    <code>PUT</code>/<code>PATCH /api/items/:id</code> henüz ownership kontrolü yapmıyor (sadece <code>DELETE</code> yapıyor). <code>main</code> branch protection kuralı admin bypass'ına açık — henüz "require status checks" zorunlu değil. Detaylar için <code>TODO.md</code> ve <code>LEARNING_LOG.md</code>'ye bakın.
   </div>
 </section>
 
