@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design token'ları (Tailwind v4 @theme bloğu)
+
+   Renkleri component'ların içine ham hex olarak GÖMMÜYORUZ; hepsi burada
+   semantik isimlerle tanımlı (surface, muted, accent, danger...). Böylece
+   "koyu tema paletini değiştir" dediğimizde tek dosya değişir — Material
+   Design'ın "semantic color tokens" prensibi.
+
+   Palet: koyu "developer console" teması (slate zemin + yeşil accent).
+   Kontrast notu: foreground #f8fafc / background #020617 ≈ 17:1 (AAA),
+   muted #94a3b8 / surface #0f172a ≈ 7:1 (AA+). Hata metni için danger
+   olarak red-400 (#f87171) seçildi — koyu zeminde red-500'den daha okunaklı.
+--------------------------------------------------------------------------- */
+@theme {
+  --font-sans: "Fira Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Fira Code", ui-monospace, "Cascadia Code", Consolas, monospace;
+
+  --color-background: #020617;
+  --color-surface: #0f172a;
+  --color-surface-raised: #1e293b;
+  --color-border: #334155;
+  --color-border-subtle: #1e293b;
+  --color-foreground: #f8fafc;
+  --color-muted: #94a3b8;
+  --color-faint: #64748b;
+  --color-accent: #22c55e;
+  --color-accent-strong: #16a34a;
+  --color-on-accent: #052e16;
+  --color-danger: #f87171;
+  --color-danger-strong: #ef4444;
+  --color-warning: #fbbf24;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Tailwind v4 preflight'ı button'ların cursor'ını 'default' bırakır;
+     tıklanabilir her şeyde pointer görmek istiyoruz (UX kuralı: cursor-pointer). */
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+}

@@ -1,14 +1,5 @@
 # Node.js Öğreniyorum (http-lab Üzerinden)
 
-> **Önemli düzeltme:** Bu dosyayı "nextjs.md" olarak istemiştiniz ama bu
-> proje **Next.js kullanmıyor** — **Node.js + Express** kullanıyor. Bunlar
-> farklı şeyler (aşağıda açıklıyorum), ve isim benzerliği yüzünden
-> karıştırılmaları çok yaygındır. Onayınızla, bu dosyayı projenin GERÇEKTEN
-> kullandığı teknoloji olan **Node.js**'i öğretecek şekilde hazırladım.
-> `TODO.md`'deki roadmap'te Week 9'da bir frontend eklenmesi planlı ama o
-> da Next.js değil (Vite tabanlı, port `:5173` — `TODO.md` satır 86'ya
-> bakabilirsin). İleride gerçekten Next.js öğrenmek istersen, bu dosyadaki
-> Node.js temelleri zaten ön koşul olacak.
 
 ---
 

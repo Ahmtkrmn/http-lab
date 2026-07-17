@@ -34,14 +34,17 @@ describe('authMiddleware.authenticateToken', () => {
     expect(req.user.role).toBe('ADMIN');
   });
 
-  it('geçersiz token için 403 döner', () => {
+  it('geçersiz token için 401 döner (kimlik sorunu, yetki sorunu değil)', () => {
+    // Week 9'da 403 -> 401 olarak düzeltildi: geçersiz/süresi dolmuş token
+    // bir KİMLİK DOĞRULAMA hatasıdır (401); 403 yalnızca rol/sahiplik
+    // reddi içindir (bkz. authMiddleware.js'teki açıklama).
     const req = { headers: { authorization: 'Bearer gecersiz.token.deger' } };
     const res = mockRes();
     const next = jest.fn();
 
     authenticateToken(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.status).toHaveBeenCalledWith(401);
     expect(next).not.toHaveBeenCalled();
   });
 });

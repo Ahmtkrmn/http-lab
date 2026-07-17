@@ -36,7 +36,29 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data # Named volume: Container silinse bile veriler kalıcı olur
 
-  # 3. Veritabanı Yönetim Arayüzü (Geliştirme için)
+  # 3. React Frontend (Week 9) — Nginx ile statik dosya sunumu
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        # DİKKAT: Burada 'app' servis adı DEĞİL, host adresi kullanılıyor.
+        # Çünkü API isteğini yapan taraf client container'ı değil, kullanıcının
+        # TARAYICISIDIR — tarayıcı Docker ağının dışında yaşar ve 'app'
+        # host adını çözemez; backend'e host'a açılan port üzerinden ulaşır.
+        # (Vite env'leri build anında bundle'a gömülür; bkz. client/Dockerfile)
+        VITE_API_URL: http://localhost:3000
+    container_name: http-lab-client
+    restart: unless-stopped
+    ports:
+      # Dev sunucusuyla (npm run dev) aynı port alışkanlığı: 5173.
+      # Böylece backend'in CORS izni (FRONTEND_URL=http://localhost:5173)
+      # her iki çalıştırma yöntemi için de aynı kalır.
+      - "5173:80"
+    depends_on:
+      - app
+
+  # 4. Veritabanı Yönetim Arayüzü (Geliştirme için)
   adminer:
     image: adminer
     container_name: http-lab-adminer

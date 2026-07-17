@@ -569,3 +569,220 @@ kalma biçimidir; kimse dashboard'a 7/24 bakmaz. Bu haftanın gerçek dersi:
 ölçüm (metrics) + gözlem (dashboard) + alarm (UptimeRobot) üçü birlikte
 "gece 3'te arıza olursa haberim olur" garantisini verir, tek başına hiçbiri
 vermez.
+
+---
+
+## Adım 6 — Week 9: Frontend Basics & Full-Stack Entegrasyonu
+
+**Tarih:** 2026-07-17
+
+Bu hafta API'yi ilk kez bir TARAYICI tüketti ve bu, backend'de görünmeyen üç
+sorunu su yüzüne çıkardı: CORS, token'ın nerede saklanacağı ve 401/403
+ayrımının aslında ne anlama geldiği. `client/` altında Vite + React + Tailwind
+v4 uygulaması kuruldu (login, korumalı route, items tablosu, rol bazlı form);
+backend'de refresh token httpOnly cookie'ye taşındı, `/refresh` (rotation'lı)
+ve `/logout` (sunucu tarafı invalidation) eklendi. Test sayısı 59 → 72.
+
+### 1. Refresh token: response body'den httpOnly cookie'ye
+
+**Yapılan Değişiklik:**
+`routes/auth.js`: login artık refresh token'ı JSON body'de DEĞİL,
+`httpOnly; Path=/api/auth; SameSite=Lax(dev)/None(prod); Secure(prod)` bir
+cookie'de dönüyor; body'de yalnızca `accessToken` + `user` (id, email, name,
+role — asla şifre hash'i) var. `app.js`'e `cookie-parser` eklendi. Yeni uçlar:
+`POST /refresh` ve `POST /logout`.
+
+**Mimari Karar:**
+Saklama stratejisi tehdit modelinden türedi: XSS olan bir sayfada JS,
+localStorage'ın ve değişkenlerin TAMAMINI okuyabilir ama httpOnly cookie'yi
+OKUYAMAZ. Bu yüzden uzun ömürlü token (7g) cookie'ye, kısa ömürlü token (15dk)
+frontend'in belleğine kondu — çalınabilecek en değerli şeyin ömrü 15 dakikaya
+indirildi. `Path=/api/auth` ile cookie'nin `/api/items` gibi uçlara HİÇ
+gitmemesi sağlandı (gereksiz maruziyet azaltma). `SameSite` seçimi ortama
+bağlı: dev'de 5173→3000 "same-site, cross-origin" olduğundan `Lax` yeterli;
+prod'da Vercel→Render cross-site olduğundan `None; Secure` şart (tarayıcı
+`None`'ı Secure'suz reddeder).
+
+**Mentör Notu:**
+"Token'ı nereye koyayım?" sorusunun tek doğru cevabı yok; doğru SORU şu:
+"XSS olduğunda saldırgan neyi, ne kadar süreyle ele geçirir?" localStorage =
+her şeyi süresiz; memory + httpOnly cookie = en fazla 15 dakikalık bir access
+token. Güvenlik kararlarını özellik listesinden değil, tehdit senaryosundan
+başlayarak ver.
+
+### 2. Token rotation ve `jti` — saniye hassasiyeti tuzağı
+
+**Yapılan Değişiklik:**
+`/refresh` her çağrıda YENİ bir refresh token üretip DB'dekini eziyor
+(rotation); eski token'la ikinci bir `/refresh` denemesi 401 alıyor (testle
+kanıtlandı). `tokenService.generateRefreshToken`'a `jti: crypto.randomUUID()`
+claim'i eklendi.
+
+**Mimari Karar:**
+`jti` süs değil, rotation'ın ÖN KOŞULU: JWT'nin `iat`/`exp` claim'leri saniye
+hassasiyetindedir; aynı saniyede aynı payload'la üretilen iki token bayt-bayt
+AYNI string olur. `jti`'siz "rotation", login'in hemen ardından gelen
+refresh'te muhtemelen aynı token'ı üretecek ve hiçbir şey döndürmemiş
+olacaktı. Rotation'ın değeri şu: çalınan bir refresh token en fazla BİR kez
+işe yarar — ikinci kullanımda (meşru kullanıcı da yenilemiş olacağından) DB
+eşleşmesi tutmaz. DB karşılaştırması da JWT imza doğrulamasının yerini tutmaz,
+onu TAMAMLAR: imza "bu token'ı ben ürettim" der, DB "bu token hâlâ aktif
+oturum" der. Logout'un gerçek işi de burada — cookie silmek istemci tarafı
+bir jesttir, oturumu öldüren şey DB'deki `refreshToken`'ın NULL'lanmasıdır.
+
+**Mentör Notu:**
+Kriptografik doğrulama (stateless) + sunucu durumu (stateful) birlikteliği
+bilinçli bir takas: access token'ı 15 dk boyunca DB'siz doğruluyoruz (hız),
+refresh'i her seferinde DB'ye soruyoruz (kontrol). "JWT stateless'tır, logout
+yapılamaz" cümlesini duyarsan bil ki eksik: access token için doğru, oturumun
+kendisi için değil.
+
+### 3. 401 vs 403 — süresi dolmuş token bir "yetki" sorunu değildir
+
+**Yapılan Değişiklik:**
+`authMiddleware`: geçersiz/süresi dolmuş access token artık **403 değil 401**
+dönüyor. İlgili unit + integration testler güncellendi. (403, `requireRole` ve
+sahiplik kontrollerinde yaşamaya devam ediyor — orası gerçekten "yetki".)
+
+**Mimari Karar:**
+Eski davranış frontend yazılırken FİİLEN bozuldu: TODO'nun hata sözleşmesi
+"401 → login'e yönlendir / sessiz yenile, 403 → 'yetkiniz yok' mesajı" diyor.
+Süresi dolan token 403 dönseydi, frontend 15 dakikada bir kullanıcıya
+"yetkiniz yok" diyecek ve token yenilemeyi hiç DENEMEYECEKTİ. Anlam ayrımı
+net: 401 "kim olduğunu doğrulayamadım, kimliğini yeniden kanıtla" (çözüm:
+refresh/login), 403 "kimliğin tamam ama iznin yok" (çözüm: rol — tekrar login
+işe yaramaz). (Not: TODO'daki eski bir madde 403 bekliyordu; bu bilinçli bir
+sözleşme değişikliğidir ve README'de duyuruldu.)
+
+**Mentör Notu:**
+Status kodları makine-okur bir SÖZLEŞMEDİR, log süsü değil. Frontend'in retry
+mantığı, monitoring'in error-rate panelleri, hepsi bu ayrıma dayanır. Bir API
+tasarlarken her hata kodu için "istemci bunu görünce NE YAPMALI?" sorusuna tek
+ve net bir cevap verebiliyor olmalısın; 401'e "yenile", 403'e "vazgeç" gibi.
+
+### 4. CORS: engelleyen sunucu değil, tarayıcıdır
+
+**Yapılan Değişiklik:**
+`app.js`'e koşullu CORS eklendi: `FRONTEND_URL` env'i varsa
+`cors({ origin: FRONTEND_URL, credentials: true })` takılıyor, yoksa hiçbir
+CORS header'ı dönmüyor (TODO'daki "kasıtlı kır → gözle → çöz" alıştırması bir
+env toggle'ı oldu). `tests/integration/cors.integration.test.js` preflight
+davranışını tarayıcısız doğruluyor.
+
+**Mimari Karar:**
+Middleware sırası bilinçli: `requestLogger` → **cors** → `metricsMiddleware`.
+Preflight OPTIONS istekleri loglansın ama cors onları erkenden yanıtlayıp
+bitirdiği için metriklere `unmatched` gürültüsü olarak yansımasın. `origin`
+olarak `*` değil TEK bir origin: kimlikli (credentials) isteklerde tarayıcı
+joker origin'i zaten reddeder. Test yazarken bir yanılgım da düzeldi: `cors`
+paketi izinsiz origin'e "izin yok" DEMEZ — her yanıtta izinli origin'i söyler;
+karşılaştırmayı ve engellemeyi TARAYICI yapar. curl/Postman'in CORS'a
+takılmamasının sebebi budur: CORS bir sunucu güvenlik duvarı değil, tarayıcının
+"bu yanıtı sayfadaki JS'e verecek miyim?" politikasıdır.
+
+**Mentör Notu:**
+CORS hatası gördüğünde refleksin "backend'e izin ekle" olmadan önce "kim, kime,
+hangi origin'den istek atıyor?" sorusu olsun. Ve `credentials` çiftini ezberle:
+frontend `credentials: 'include'` + backend `credentials: true` — ikisi
+birlikte yoksa cookie sessizce yolda kaybolur ve hata mesajı bile göremezsin
+(istek "anonim" gider). Sessiz başarısızlıklar, yanlış yapılandırılmış CORS'un
+en sinsi yüzüdür.
+
+### 5. Frontend mimarisi: api/ katmanı, in-memory token, silent refresh
+
+**Yapılan Değişiklik:**
+`client/src/api/http.js` tüm isteklerin tek kapısı: base URL (`VITE_API_URL`),
+Bearer header, `credentials: 'include'`, hata normalizasyonu (`ApiError`:
+`status` + `kind: 'network'|'http'`) ve 401 görünce "refresh dene → isteği BİR
+kez tekrarla" mantığı. `tokenStore.js` (modül değişkeni) access token'ın tek
+evi. `AuthContext` açılışta `restoreSession()` ile cookie'den oturumu sessizce
+geri kuruyor; `ProtectedRoute` üç durumla (`loading/authenticated/anonymous`)
+çalışıyor. `LoginPage`, `ItemsPage`, rol bazlı `NewItemForm` (kategori
+dropdown'ı için backend'e küçük bir `GET /api/categories` eklendi).
+
+**Mimari Karar:**
+İki incelik: (1) `status`'un üç durumlu olması şart — sadece `user == null`'a
+bakılsaydı, F5 sonrası refresh yanıtı gelene kadarki birkaç yüz milisaniyede
+kullanıcı login'e fırlatılırdı; `loading` bu belirsizlik penceresini temsil
+eder. (2) Eşzamanlı 401'ler tek refresh'i paylaşır (`refreshPromise` dedup):
+rotation yüzünden iki paralel refresh, ikincisini "eski token" diye 401'letirdi
+— React StrictMode'un effect'leri iki kez çalıştırması bu bug'ı dev'de anında
+yakalatırdı. Ayrıca oturum düşünce yönlendirme kararı http.js'te DEĞİL:
+http.js sadece `onSessionExpired` callback'ini çağırır, callback'i
+AuthContext kaydeder — alt katman üst katmanı import etmez (DIP'in frontend
+karşılığı; backend'deki `getPrismaClient()` seam'inin kuzeni).
+
+**Mentör Notu:**
+"Component'ta fetch yok" kuralı estetik değil, mimari: 401-refresh-retry gibi
+kesişen dertler (cross-cutting concerns) tek yerde çözülür; component'lar
+yalnızca "veri geldi / gelmedi / hata" ile ilgilenir. Backend'de route'lara
+`jwt.sign` gömmemekle (Week 4 refactor'ü) aynı ilke — katman sorumluluğunu
+koru, aynı derdi iki yerde çözme.
+
+### 6. Vite env'leri build anında gömülür + Nginx SPA fallback
+
+**Yapılan Değişiklik:**
+`client/Dockerfile` (multi-stage: node build → nginx:alpine serve) ve
+`client/nginx.conf` (SPA fallback: `try_files $uri $uri/ /index.html`) yazıldı;
+compose'a `client` servisi eklendi (`5173:80`). Kök `.dockerignore`'a `client`
+eklendi (backend imajının build context'ine `client/node_modules` girmesin).
+Compose ile tam yığın doğrulandı: `/health` 200, login→refresh→rotation→
+logout akışı curl ile uçtan uca, SPA fallback (`/items` → 200) ve CORS'un
+"kırık" başlangıç durumu dahil.
+
+**Mimari Karar:**
+İki kritik fark backend alışkanlıklarını kırar: (1) `VITE_API_URL` compose'da
+`http://app:3000` DEĞİL `http://localhost:3000` — çünkü isteği atan client
+container'ı değil, Docker ağının DIŞINDA yaşayan tarayıcıdır; `app` host adı
+tarayıcıda çözülmez. (2) Vite env'leri RUNTIME'da okunmaz, build sırasında
+bundle'a string olarak GÖMÜLÜR — statik dosyada `process.env` yoktur. Bu
+yüzden değer Dockerfile'a build ARG olarak girer ve API adresi değişirse
+imaj yeniden build edilir (Vercel'de de env değişince redeploy gerekir).
+Nginx'teki `try_files` satırı ise React Router'ın hayat sigortası: `/items`
+sunucuda bir dosya değil, JS'te yaşayan bir route'tur; fallback olmasa F5
+Nginx 404'üyle biterdi.
+
+**Mentör Notu:**
+Full-stack'te "environment variable" kelimesi iki FARKLI şeyi adlandırır:
+backend'de çalışma anında okunan gerçek process env'i, frontend'de ise build
+anında koda gömülen bir sabit. Bu yüzden frontend env'ine ASLA secret koyma —
+`VITE_` önekli her değer, tarayıcıya inen JS'in içinde düz metin olarak
+gezer. "Frontend'de gizli bilgi yoktur" cümlesini duvara as.
+
+---
+
+## Adım 7 — Proje anlayışını güçlendiren dokümantasyon: `software.md` genişletmesi + yeni `frontend.md`
+
+**Tarih:** 2026-07-17
+
+**Yapılan Değişiklik:**
+`software.md` (o zamana kadar sadece backend'i anlatan bir "sıfırdan anlatım"
+belgesiydi) Week 9 frontend'ini kapsayacak şekilde 6 yeni bölümle (14-19)
+genişletildi: Vite/React'in nasıl derlenip çalıştığı, frontend'in backend'le
+aynı SRP katmanlaşmasını (route↔page, itemsDb↔api/items.js, prisma.js↔http.js)
+nasıl taşıdığı, tarayıcıda login'den item listesine kadar TAM istek yolculuğu
+(dosya:satır referanslarıyla), CORS + token saklama tehdit modeli, ve
+docker-compose'daki dördüncü (client/Nginx) container. 1. bölümdeki artık
+yanlış olan "bu proje arayüz içermiyor" cümlesi de güncellendi. Bağımsız yeni
+bir dosya olarak `frontend.md` oluşturuldu: React/JSX/component/state/hook/
+routing/Tailwind kavramlarını sıfırdan, bu projenin gerçek `client/src/`
+dosyaları üzerinden öğreten bir belge — `nodejs.md`'nin frontend karşılığı.
+
+**Mimari Karar:**
+İçerik ikiye bölündü, tek bir dev koca dosyaya gömülmedi: `frontend.md`
+"React NEDİR" sorusunu (kavramsal, projeden bağımsız öğrenme), `software.md`
+"bu React kodu backend'e NASIL bağlanıyor" sorusunu (bu projeye özgü
+entegrasyon/güvenlik akışı) cevaplıyor. Bu ayrım, zaten var olan `nodejs.md`
+(Node NEDİR) / `software.md` (bu proje NASIL çalışıyor) desenini tekrar
+kullanıyor — üçüncü bir dosya eklemek, var olan iki dosyayı da büyütüp
+okunamaz hale getirmek yerine aynı deseni bir katman daha genişletti.
+
+**Mentör Notu:**
+Dokümantasyonu "nerede yaşaması gerektiği" sorusuyla organize et: "bu bir
+KAVRAM mı (proje bağımsız, başka projede de geçerli) yoksa bu projeye ÖZGÜ
+bir MİMARİ KARAR mı?" Kavramlar (Node.js nedir, React nedir) ayrı, tekrar
+kullanılabilir dosyalarda yaşamalı; o kavramların BU projede nasıl bir araya
+geldiği (istek yolculuğu, CORS, auth, Docker) ayrı bir dosyada yaşamalı. Aksi
+halde tek dosya hem "kavramsal öğretici" hem "projeye özgü referans" olmaya
+çalışır ve ikisini de kötü yapar — okuyan kişi ne aradığını bilse bile doğru
+yeri bulamaz.

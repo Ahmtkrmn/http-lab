@@ -18,7 +18,20 @@ const authenticateToken = (req, res, next) => {
     req.user = user; // Kullanıcı bilgilerini diğer fonksiyonlar okuyabilsin diye req içine koyuyoruz
     next();
   } catch (err) {
-    return res.status(403).json({ error: 'Geçersiz veya süresi dolmuş token.' });
+    // Week 9 düzeltmesi: Burası eskiden 403 dönüyordu — HTTP semantiği
+    // açısından yanlıştı ve frontend'i bozuyordu:
+    //   401 Unauthorized -> "KİMLİĞİNİ doğrulayamadım" (token yok/bozuk/
+    //       süresi dolmuş). Doğru tepki: yeniden kimlik kanıtla (frontend
+    //       bunu görünce sessizce /api/auth/refresh dener, olmazsa login'e
+    //       yönlendirir).
+    //   403 Forbidden -> "Kimliğin TAMAM ama bu işleme İZNİN yok" (rol/
+    //       sahiplik). Doğru tepki: 'Yetkiniz yok' mesajı — tekrar login
+    //       olmak durumu DEĞİŞTİRMEZ.
+    // Süresi dolmuş token bir kimlik sorunudur; 403 dönseydi frontend
+    // kullanıcıya yanlışlıkla 'yetkin yok' der ve token yenilemeyi hiç
+    // denemezdi. 403'ü artık yalnızca requireRole (ve sahiplik kontrolleri)
+    // döndürür.
+    return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş token.' });
   }
 };
 
