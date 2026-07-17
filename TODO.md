@@ -31,6 +31,39 @@ Bu projeyi bitirdiğimde elimde şunlar olacak:
 
 > **Ne öğreniyorum:** "Çalışıyor gibi görünüyor" ile "gerçekten çalışıyor" arasındaki fark ölçümle anlaşılır. Gece 3'teki arıza anında ne baktığını bilmek bu haftanın konusu.
 
+---
+
+### ▶️ KALDIĞIMIZ YER (2026-07-16 — projeye dönünce buradan devam et)
+
+**Şu ana kadar TAMAM olan:**
+- ✅ Structured logging (pino) + requestId + metrics (prom-client) kodu yazıldı, test edildi (59 test), `main`'e push edildi.
+- ✅ Render redeploy oldu; canlı `/metrics` **200 dönüyor** (`https://http-lab.onrender.com/metrics`).
+- ✅ `/metrics` güvenliği: Render'da `METRICS_TOKEN` env'i ayarlandı. Doğrulandı → token'sız **403**, doğru token'la **200**.
+- ✅ `monitoring/` klasörü hazır: `config.alloy`, `docker-compose.monitoring.yml`, `.env.monitoring.example`, `grafana-dashboard.json` (4 panel), `generate-traffic.sh`, `README.md` (adım-adım rehber).
+
+**🔜 SIRADAKİ ADIM — Grafana Cloud'a bağlan (detaylı rehber: `monitoring/README.md`):**
+
+1. [x] **Grafana Cloud hesabı aç** (grafana.com, ücretsiz). Prometheus remote_write için 3 değeri al:
+       Remote Write Endpoint URL'i (`…/api/prom/push`), Username/Instance ID (sayı), API Token (`metrics:write`).
+2. [x] `cd monitoring && cp .env.monitoring.example .env.monitoring` → içini doldur:
+       - `SCRAPE_TARGET=http-lab.onrender.com:443`
+       - `METRICS_TOKEN=` → **Render'daki env'in AYNISI** (Render Dashboard → http-lab → Environment'tan kopyala; buraya/commit'e yazma!)
+       - `GRAFANA_CLOUD_PROM_URL`, `GRAFANA_CLOUD_USER`, `GRAFANA_CLOUD_API_KEY` → adım 1'deki 3 değer.
+3. [x] Alloy'u başlat: `docker compose -f monitoring/docker-compose.monitoring.yml up` → arayüz: http://localhost:12345 (target UP mı?).
+4. [x] Grafana Cloud → **Explore** → `http_requests_total` sorgusu veri dönüyor mu? (boru hattı doğrulaması)
+5. [x] `bash monitoring/generate-traffic.sh` ile canlıya trafik üret (paneller dolsun).
+6. [x] Grafana → **Dashboards → Import** → `monitoring/grafana-dashboard.json` yükle, Prometheus data source'u seç.
+7. [x] Dashboard ekran görüntüsü → `docs/grafana_dashboard.png` → ana `README.md`'ye eklendi.
+8. [x] **UptimeRobot**: `/health` için 5 dk'lık HTTP monitörü + e-posta alert kur (2 dk yanıt yoksa bildirim).
+9. [ ] `monitoring/` dosyalarını commit et (`.env.monitoring` hariç — gitignore'lı).
+
+(1-7 detayı: bkz. `LEARNING_LOG.md` → Adım 5, madde 6 "Grafana Cloud'a uçtan uca bağlantı")
+
+**⚠️ Hatırlatma:** `METRICS_TOKEN`'ı hiçbir committed dosyaya yazma. Kaynağı Render Environment sekmesi;
+Alloy da onu `monitoring/.env.monitoring` (gitignore'lı) üzerinden okuyacak.
+
+---
+
 ### Structured Logging
 
 - [x] `pino` veya `winston` kur: `npm install pino pino-pretty` — pino + pino-pretty (dev) kuruldu (bkz. `LEARNING_LOG.md` Adım 5)
@@ -57,15 +90,15 @@ Bu projeyi bitirdiğimde elimde şunlar olacak:
 Uygulama tarafı hazır: `/metrics` Prometheus formatında yayında ve PromQL sorguları
 README'ye yazıldı. Kalan adımlar bir panel/hesap kurulumudur (dosyayla yapılamaz):
 
-- [ ] Grafana Cloud'da ücretsiz hesap aç
-- [ ] Grafana Alloy/Agent ile `/metrics`'i scrape edip Grafana'ya `remote_write` et (README'de adımlar)
-- [ ] En az 3 panelli dashboard kur (RPS / Error Rate / P95 Latency — PromQL'ler README'de hazır)
-- [ ] Dashboard ekran görüntüsünü README'ye ekle
+- [x] Grafana Cloud'da ücretsiz hesap aç
+- [x] Grafana Alloy/Agent ile `/metrics`'i scrape edip Grafana'ya `remote_write` et (README'de adımlar)
+- [x] En az 3 panelli dashboard kur (RPS / Error Rate / P95 Latency — PromQL'ler README'de hazır; 4 panel import edildi, DB connections dahil)
+- [x] Dashboard ekran görüntüsünü README'ye ekle
 
 ### Alerting — ⚠️ SENİN AKSİYONUN (kod hazır: /health 200/503 döner)
 
 - [x] README'ye "Monitoring & Alerting" bölümü ekle — Grafana + UptimeRobot adım-adım rehberi eklendi
-- [ ] UptimeRobot ücretsiz plan ile `/health` endpoint'ini izle (5 dakikada bir ping)
+- [x] UptimeRobot ücretsiz plan ile `/health` endpoint'ini izle (5 dakikada bir ping)
 - [ ] E-posta alertini ayarla: servis 2 dakika yanıt vermezse bildirim gelsin
 
 ---
@@ -205,7 +238,7 @@ Bu maddeler haftalık değil ama projeyi büyüttükçe birikirse sonra yazmak z
 | 5 | Testing & Clean Code | ✅ Tamamlandı (%94 coverage) |
 | 6 | Docker | ✅ Tamamlandı (multi-stage build) |
 | 7 | CI/CD & Deployment | ✅ Tamamlandı |
-| 8 | Monitoring & Logging | 🟡 Kod tamamlandı (logging + metrics + testler); Grafana/UptimeRobot kurulumu senin aksiyonunda |
+| 8 | Monitoring & Logging | ✅ Tamamlandı (logging + metrics + testler + Grafana Cloud dashboard + UptimeRobot; sadece `monitoring/` klasörünün commit'i kaldı) |
 | 9 | Frontend & Full-Stack | 🔲 |
 | 10 | AI/RAG (Portfolio #3) | 🔲 |
 

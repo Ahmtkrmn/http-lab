@@ -304,6 +304,13 @@ Bu adımlar bir GitHub/panel kurulumudur, dosyayla yapılamaz:
 4. Dashboard'ın ekran görüntüsünü alıp bu README'ye ekle (`docs/` altına koyup
    buraya `![Grafana Dashboard](docs/grafana.png)` ile bağla).
 
+![Grafana Dashboard](docs/grafana_dashboard.png)
+
+*RPS, 5xx error rate, P50/P95/P99 latency ve aktif DB bağlantı sayısı — canlı
+Render servisinden Grafana Alloy ile scrape edilip Grafana Cloud'a
+remote_write edilen gerçek metrikler (`monitoring/generate-traffic.sh` ile
+üretilen test trafiği üzerinden).*
+
 ### Alerting — UptimeRobot (ücretsiz) — ⚠️ senin yapman gereken kurulum
 
 1. [uptimerobot.com](https://uptimerobot.com/) → ücretsiz hesap aç.

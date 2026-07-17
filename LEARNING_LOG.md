@@ -508,3 +508,64 @@ Yeni bir özellik (metrics), var olan bir test kurgusunu (prisma singleton mock'
 sessizce bozabilir. Bir modüle export eklerken "bu modülü kim mock'luyor ve
 mock'unda bu yeni şey var mı?" diye sor. Late-require + `?.` gibi küçük savunmalar,
 DIP/singleton seam'ini koruyarak yeni bağımlılıkları güvenle eklemenin yoludur.
+
+### 6. Grafana Cloud'a uçtan uca bağlantı: Alloy, remote_write ve iki farklı API key yetkisi
+
+**Yapılan Değişiklik:**
+`/metrics`'i dışarıya (Grafana Cloud'a) taşımak için `monitoring/` klasöründeki
+hazır `config.alloy` + `docker-compose.monitoring.yml` kullanıldı. Render'da
+`METRICS_TOKEN` zaten ayarlıydı (token'sız `403`, token'lı `200` doğrulandı);
+`monitoring/.env.monitoring` (gitignore'lı) Grafana Cloud'un verdiği 3 değerle
+(remote_write URL, instance ID, `metrics:write` API key) dolduruldu. Alloy'u
+Docker'da ayağa kaldırıp (`docker compose -f docker-compose.monitoring.yml up
+-d`) hem kendi component health API'sinden (`/api/v0/web/components`, ikisi de
+`healthy`) hem de Grafana Cloud **Explore**'dan (`http_requests_total` sorgusu
+veri döndü) uçtan uca doğrulandı. `generate-traffic.sh` ile canlıya karışık
+trafik (200/401/404 + ara sıra register/login) üretilip 4 panelli hazır
+dashboard (`grafana-dashboard.json`) import edildi; ekran görüntüsü
+`docs/grafana_dashboard.png` olarak ana `README.md`'ye bağlandı.
+
+**Mimari Karar:**
+Grafana Cloud internetteki rastgele bir `/metrics` endpoint'ini kendisi
+yoklamaz (pull yönü ters çevrilemez) — bu yüzden mimaride bir "collector" (Alloy)
+zorunlu: o `/metrics`'i **çeker** (pull), Grafana Cloud'a **push** eder
+(`remote_write`). Alloy'u prod'a (Render'a) değil, kendi makinene (Docker'da)
+kurmak bilinçli bir tercih: hem ücretsiz hem de öğrenme amaçlı setup için Render'ı
+ekstra bir process ile kirletmiyor — Alloy sadece dışarıdan `https://http-lab
+.onrender.com/metrics`'i HTTPS üzerinden çekiyor, konumu önemsiz.
+
+**Mentör Notu:**
+Grafana Cloud'da API key üretirken doğrulama amacıyla o key'le `/api/prom/api/
+v1/query` sorgusu atmayı denedim ve `"authentication error: invalid scope
+requested"` aldım — bu bir HATA değil, DOĞRU davranış: `metrics:write` yetkili
+bir token'ın sorgu (`read`) yapamaması "en az yetki" (least privilege) ilkesinin
+kanıtı. Bir entegrasyonu doğrularken "beklenmedik bir hata aldım" ile "sistem
+tam da izin vermemesi gerektiği gibi izin vermedi" arasındaki farkı ayırt etmek
+önemli — panik yapıp token'ı yeniden üretmek yerine, hatanın kaynağını (scope)
+okumak yeterliydi. Bu yüzden uçtan uca doğrulamayı asıl amacına uygun kanaldan
+(Grafana Explore, kendi oturumunla) yapmak gerekti.
+
+### 7. UptimeRobot ile dış-dünya alarmı
+
+**Yapılan Değişiklik:**
+UptimeRobot'ta ücretsiz bir hesapla `https://http-lab.onrender.com/health`
+için 5 dakikalık aralıkla bir HTTP(s) monitör kuruldu, e-posta alert contact
+eklendi. `/health`'in `curl` ile `200` + `db:"connected"` döndüğü ayrıca
+doğrulandı.
+
+**Mimari Karar:**
+Grafana dashboard'ı "bakarsan görürsün" (pull, insan tetikli); UptimeRobot ise
+"bakmasan da sana söyler" (push, alarm tetikli) — ikisi birbirinin yerine
+geçmiyor, tamamlayıcı. `/health`'in zaten `SELECT 1` ile DB'yi de kontrol
+etmesi sayesinde (bkz. Adım 3 öncesi health check sertleştirmesi) UptimeRobot
+sadece process canlılığını değil, DB bağlantısını da fiilen izliyor — ayrı bir
+DB-health monitörü kurmaya gerek kalmadı.
+
+**Mentör Notu:**
+Bir "izlenebilirlik" hikâyesinin iki ayrı bacağı var: **gözlem** (dashboard —
+"şu an sistem nasıl?") ve **alarm** (UptimeRobot — "sistem kötüyken bana
+söyle"). Sadece dashboard kurup "monitoring bitti" demek yaygın bir eksik
+kalma biçimidir; kimse dashboard'a 7/24 bakmaz. Bu haftanın gerçek dersi:
+ölçüm (metrics) + gözlem (dashboard) + alarm (UptimeRobot) üçü birlikte
+"gece 3'te arıza olursa haberim olur" garantisini verir, tek başına hiçbiri
+vermez.
