@@ -46,6 +46,16 @@ describe('tokenService', () => {
       const diffSeconds = decoded.exp - decoded.iat;
       expect(diffSeconds).toBe(7 * 24 * 60 * 60);
     });
+
+    it('aynı saniyede üretilen iki token bile FARKLIDIR (jti sayesinde)', () => {
+      // Week 9 token rotation bu garantiye dayanır: iat/exp saniye
+      // hassasiyetinde olduğu için jti olmadan art arda üretilen iki token
+      // birebir aynı string olurdu (bkz. tokenService.js'teki açıklama).
+      const token1 = generateRefreshToken({ userId: 1 });
+      const token2 = generateRefreshToken({ userId: 1 });
+      expect(token1).not.toBe(token2);
+      expect(jwt.decode(token1).jti).toBeDefined();
+    });
   });
 
   describe('verifyAccessToken', () => {

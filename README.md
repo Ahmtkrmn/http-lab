@@ -13,13 +13,15 @@ kategori bazlı ürünler (`Item`) üzerinde CRUD işlemleri sunar.
 ## Özellikler
 
 - **Kimlik doğrulama**: Kayıt ol / giriş yap, `bcrypt` ile şifre hashleme, `jsonwebtoken` ile access & refresh token üretimi
+- **Cookie tabanlı oturum (Week 9)**: Refresh token httpOnly cookie'de + **token rotation** + sunucu tarafı invalidation (`/refresh`, `/logout`)
 - **Rol bazlı yetkilendirme (RBAC)**: `ADMIN`, `EDITOR`, `VIEWER` rolleri
 - **Sahiplik kontrolü**: Kullanıcılar (ADMIN hariç) yalnızca kendi oluşturdukları ürünleri silebilir
 - **Prisma 7 + `@prisma/adapter-pg`**: PostgreSQL ile driver adapter üzerinden, uygulama genelinde **tek bir paylaşılan** bağlantı
 - **Merkezi hata yönetimi** ve **request logging** middleware'leri
 - **Login rate limiting**: `express-rate-limit` ile 15 dakikada IP başına 5 deneme sınırı (test ortamında devre dışı)
 - **Observability (Week 8)**: `pino` ile structured (JSON) logging + her isteğe `requestId` (correlation ID); `prom-client` ile Prometheus metrikleri (`/metrics`) — istek sayısı/süresi (P50/P95/P99) ve aktif DB bağlantısı
-- **%95 test coverage** — 59 test (unit + integration), gerçek bir PostgreSQL test veritabanına karşı çalışır
+- **React Frontend (Week 9)**: `client/` altında Vite + React + Tailwind v4 — login, korumalı route, rol bazlı UI, in-memory access token + silent refresh (bkz. "Frontend & Full-Stack" bölümü)
+- **72 test** (unit + integration), gerçek bir PostgreSQL test veritabanına karşı çalışır
 - Postman koleksiyonu (`http-lab.postman_collection.json`) ile hazır istek örnekleri
 
 ## Teknoloji Yığını
@@ -36,6 +38,8 @@ kategori bazlı ürünler (`Item`) üzerinde CRUD işlemleri sunar.
 | Metrics | `prom-client` (Prometheus) |
 | Ortam Değişkenleri | `dotenv` |
 | Geliştirme | `nodemon` |
+| Frontend (Week 9) | Vite + React 19, Tailwind CSS v4, React Router 7, Phosphor Icons |
+| Frontend Sunumu | Nginx (docker compose'da statik dosya sunumu) |
 
 ---
 
@@ -158,10 +162,14 @@ yerelde de aynı şekilde `docker compose up` ile çalıştırılması **canonic
 2. ```bash
    docker compose up --build
    ```
-   Bu komut `app` (API), `db` (PostgreSQL) ve `adminer` (DB yönetim arayüzü,
+   Bu komut `app` (API), `db` (PostgreSQL), `client` (React frontend, Nginx
+   ile `http://localhost:5173`) ve `adminer` (DB yönetim arayüzü,
    `http://localhost:8080`) servislerini ayağa kaldırır. `app` container'ı
    açılırken `Dockerfile`'daki `CMD` sayesinde migration'ları otomatik uygular.
-3. Sunucu `http://localhost:3000` adresinde çalışır.
+3. Sunucu `http://localhost:3000`, frontend `http://localhost:5173` adresinde
+   çalışır. Frontend'in API'ye erişebilmesi için `.env`'de
+   `FRONTEND_URL=http://localhost:5173` satırının açık olması gerekir
+   (bkz. "CORS" bölümü — bu satır kapalıyken CORS bilinçli olarak "kırık"tır).
 
 Kod değiştirdikçe image'ı yeniden build etmeniz gerekir (`docker compose up
 --build`); `package*.json` değişmediyse Docker'ın layer cache'i sayesinde
@@ -203,7 +211,19 @@ Sunucu varsayılan olarak `http://localhost:3000` adresinde çalışır.
 | Metod | Yol | Açıklama | Not |
 |---|---|---|---|
 | POST | `/register` | Yeni kullanıcı oluşturur | `email`, `password`, `name` zorunlu; `role` gönderilmezse `VIEWER` |
-| POST | `/login` | Giriş yapar, access & refresh token döner | 15 dk'da IP başına 5 istekle sınırlı (test ortamında pas geçilir) |
+| POST | `/login` | Giriş yapar; body'de `accessToken` + `user`, **httpOnly cookie'de refresh token** döner | 15 dk'da IP başına 5 istekle sınırlı (test ortamında pas geçilir) |
+| POST | `/refresh` | Cookie'deki refresh token ile yeni access token üretir; refresh token'ı **rotate** eder | Kimlik cookie'den; `Authorization` header'ı gerekmez |
+| POST | `/logout` | DB'deki refresh token'ı NULL'lar (sunucu tarafı invalidation) ve cookie'yi temizler | Her zaman `204` (idempotent) |
+
+> **Week 9 değişikliği:** `/login` artık refresh token'ı response body'de
+> DÖNDÜRMEZ — token, `httpOnly` + `Path=/api/auth` cookie'sinde taşınır.
+> Ayrıca geçersiz/süresi dolmuş access token artık **403 değil 401** döner
+> (401 = kimlik sorunu → yeniden doğrula; 403 = yetki sorunu → rol yetersiz).
+
+### Categories (`/api/categories`)
+| Metod | Yol | Açıklama | Gerekli Rol |
+|---|---|---|---|
+| GET | `/` | Kategorileri isme göre sıralı listeler (frontend'in item formu için) | Giriş yapmış herkes |
 
 ### Items (`/api/items`) — tümü `authenticateToken` gerektirir
 | Metod | Yol | Açıklama | Gerekli Rol |
@@ -216,6 +236,121 @@ Sunucu varsayılan olarak `http://localhost:3000` adresinde çalışır.
 | DELETE | `/:id` | Ürünü siler | `EDITOR`/`ADMIN`, yalnızca kendi oluşturduğu ürün (ADMIN istisna) |
 
 İstekler `Authorization: Bearer <accessToken>` header'ı ile gönderilmelidir.
+
+---
+
+## Frontend & Full-Stack Entegrasyonu (Week 9)
+
+`client/` klasörü, API'yi tüketen bağımsız bir React uygulamasıdır
+(Vite + React 19 + Tailwind CSS v4 + React Router 7).
+
+### Çalıştırma
+
+```bash
+# Yöntem 1 — dev sunucusu (hot reload):
+cd client
+cp .env.example .env.local      # VITE_API_URL=http://localhost:3000
+npm install
+npm run dev                     # http://localhost:5173
+
+# Yöntem 2 — docker compose (Nginx ile production benzeri):
+docker compose up --build       # client servisi de http://localhost:5173'te
+```
+
+İki yöntemde de backend'in `.env`'inde `FRONTEND_URL=http://localhost:5173`
+açık olmalıdır (aşağıdaki CORS bölümüne bakın). Giriş yapabilmek için önce
+API'den bir kullanıcı oluşturun (`POST /api/auth/register` — Postman
+koleksiyonunda hazır; formu görebilmek için `role: "EDITOR"` verin).
+
+### Mimari
+
+```
+client/src/
+├── api/            # TÜM fetch çağrıları burada — component'larda fetch YOK
+│   ├── http.js     #   tek kapı: base URL, Bearer header, 401->silent refresh,
+│   │               #   hata normalizasyonu (ApiError: status + kind)
+│   ├── auth.js     #   login / restoreSession / logout
+│   ├── items.js    #   getItems / createItem
+│   └── categories.js
+├── auth/
+│   ├── tokenStore.js    # access token'ın yaşadığı TEK yer: bellek (RAM)
+│   ├── AuthContext.jsx  # oturum state'i + açılışta cookie'den sessiz giriş
+│   └── ProtectedRoute.jsx
+├── pages/          # LoginPage, ItemsPage
+└── components/     # NewItemForm (rol bazlı), Feedback, styles
+```
+
+### Token saklama stratejisi (neden localStorage değil?)
+
+| Token | Nerede | Neden |
+|---|---|---|
+| Access token (15 dk) | JS belleği (`tokenStore.js`) | localStorage XSS ile okunabilir; bellek, sekme kapanınca buharlaşır ve global API'si yoktur. Çalınsa bile 15 dk'lık |
+| Refresh token (7 gün) | `httpOnly` cookie (`Path=/api/auth`) | JS hiçbir şekilde OKUYAMAZ; tarayıcı yalnızca `/api/auth/*` isteklerine otomatik ekler |
+
+Sayfa yenilenince (F5) bellek sıfırlanır ama cookie kalır: uygulama açılışta
+`POST /api/auth/refresh` çağırıp oturumu **şifre sormadan** geri kurar
+(silent refresh). Her refresh'te token **rotate** edilir: eski refresh token
+DB'de yenisiyle ezilir, yani çalınan bir refresh token en fazla bir kez
+kullanılabilir. Logout, cookie silmenin ötesinde DB'deki token'ı NULL'layarak
+oturumu **sunucu tarafında** geçersiz kılar.
+
+### CORS: neden fırlar, nasıl çözülür?
+
+Tarayıcı, `http://localhost:5173`'teki sayfanın `http://localhost:3000`'e
+istek atmasını **Same-Origin Policy** gereği engeller — sunucu
+`Access-Control-Allow-Origin` header'ı ile açıkça izin vermedikçe. Önemli
+kavrayış: engelleyen **sunucu değil, tarayıcıdır**; `curl`/Postman bu yüzden
+CORS'a takılmaz. CORS bir güvenlik duvarı değil, tarayıcının "bu yanıtı
+sayfadaki JS'e verecek miyim?" kararıdır.
+
+**Alıştırma (kasıtlı kır → gözle → çöz):** `.env`'deki `FRONTEND_URL` satırı
+kapalıyken backend CORS header'ı göndermez:
+
+1. `FRONTEND_URL` kapalıyken frontend'den login olmayı dene → Console'da
+   `blocked by CORS policy` hatasını gör, ekran görüntüsü al.
+2. DevTools → Network'te isteği incele: yanıtta `Access-Control-Allow-*`
+   header'ları YOK.
+3. `.env`'de `FRONTEND_URL=http://localhost:5173` satırını aç, backend'i
+   yeniden başlat → aynı istekte artık `Access-Control-Allow-Origin:
+   http://localhost:5173` ve `Access-Control-Allow-Credentials: true`
+   header'larını gör.
+
+### `credentials: true` + `credentials: 'include'` — neden İKİSİ birden?
+
+Cookie'ler cross-origin isteklerde **varsayılan olarak taşınmaz**. Refresh
+token cookie'sinin `5173 → 3000` yolculuğu için iki tarafın da ayrı ayrı rıza
+göstermesi gerekir:
+
+- **Frontend** (`client/src/api/http.js`): `fetch(..., { credentials:
+  'include' })` — "bu isteğe cookie'leri EKLE ve yanıttaki Set-Cookie'yi
+  işle" (axios'taki karşılığı `withCredentials: true`).
+- **Backend** (`src/app.js`): `cors({ origin: ..., credentials: true })` —
+  yanıta `Access-Control-Allow-Credentials: true` ekler; "kimlikli isteği
+  kabul ediyorum".
+
+Biri eksikse ne olur? Frontend `include` demezse tarayıcı cookie'yi hiç
+göndermez (istek "anonim" gider, refresh 401 döner). Backend `credentials:
+true` demezse tarayıcı, cookie'li isteğin yanıtını frontend'e VERMEZ.
+Ayrıca kimlikli istekte `Access-Control-Allow-Origin: *` (joker) tarayıcı
+tarafından reddedilir — bu yüzden origin tek tek, açıkça belirtilir.
+
+### Frontend hata sözleşmesi (TODO.md Week 9)
+
+| Durum | Davranış |
+|---|---|
+| `401` | Önce sessizce `/refresh` dene ve isteği tekrarla; o da 401 ise oturum düşmüştür → `/login`'e yönlendir (merkezi: `http.js` + `AuthContext`) |
+| `403` | "Yetkiniz yok" mesajı — tekrar login olmak durumu değiştirmez, yönlendirme YAPILMAZ |
+| Network hatası | "Sunucuya ulaşılamadı" + Tekrar dene butonu (backend kapalı ya da CORS engeli) |
+
+### Deploy (Vercel/Netlify) — ⚠️ senin aksiyonun
+
+1. Vercel'de "Add New Project" → bu repo'yu seç; **Root Directory:
+   `client`** olarak ayarla (framework: Vite otomatik algılanır).
+2. Environment Variables: `VITE_API_URL=https://http-lab.onrender.com`
+   (Vite env'leri build anında gömülür — değiştirirsen redeploy gerekir).
+3. Render tarafında (backend env): `FRONTEND_URL=https://<proje>.vercel.app`
+   ekle — production'da cookie `SameSite=None; Secure` ile gider (cross-site),
+   bu backend'de `NODE_ENV=production` ile otomatik seçilir.
 
 ---
 
@@ -397,22 +532,24 @@ npm run test:coverage  # coverage raporuyla birlikte
 ```
 File                    | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
 ------------------------|---------|----------|---------|---------|-------------------
-All files               |   95.96 |    86.36 |    97.5 |   95.91 |
- src                    |   96.87 |      100 |   66.66 |   96.87 |
-  app.js                |   96.87 |      100 |   66.66 |   96.87 | 91
+All files               |   95.79 |     87.5 |   97.87 |   95.75 |
+ src                    |   97.43 |      100 |   66.66 |   97.43 |
+  app.js                |   97.43 |      100 |   66.66 |   97.43 | 128
  src/db                 |     100 |      100 |     100 |     100 |
   prisma.js             |     100 |      100 |     100 |     100 |
- src/metrics            |   94.73 |     62.5 |     100 |   94.73 | 21
-  metrics.js            |   94.73 |     62.5 |     100 |   94.73 |
+ src/metrics            |   94.73 |       75 |     100 |   94.73 |
+  metrics.js            |   94.73 |       75 |     100 |   94.73 | 21
  src/middleware         |     100 |    93.22 |     100 |     100 |
   authMiddleware.js     |     100 |      100 |     100 |     100 |
   errorHandler.js       |     100 |    66.66 |     100 |     100 | 13,35
   metricsAccessGuard.js |     100 |    94.28 |     100 |     100 | 15,58
   requestLogger.js      |     100 |      100 |     100 |     100 |
- src/routes             |   90.36 |    93.54 |     100 |   90.36 |
-  auth.js               |   91.42 |    84.61 |     100 |   91.42 | 27,51,89
+ src/routes             |   91.53 |    92.68 |     100 |   91.53 |
+  auth.js               |   93.05 |    86.95 |     100 |   93.05 | 82,106,154,204,238
+  categories.js         |      90 |      100 |     100 |      90 | 16
   items.js              |   89.58 |      100 |     100 |   89.58 | 18,31,71,81,102
  src/store              |     100 |    71.42 |     100 |     100 |
+  categoriesDb.js       |     100 |      100 |     100 |     100 |
   itemsDb.js            |     100 |    71.42 |     100 |     100 | 56,58-72
  src/utils              |     100 |    68.75 |     100 |     100 |
   logger.js             |     100 |    58.33 |     100 |     100 | 28-56
@@ -420,13 +557,13 @@ All files               |   95.96 |    86.36 |    97.5 |   95.91 |
   tokenService.js       |     100 |      100 |     100 |     100 |
 ------------------------|---------|----------|---------|---------|-------------------
 
-Test Suites: 9 passed, 9 total
-Tests:       59 passed, 59 total
-Time:        15.8 s
+Test Suites: 11 passed, 11 total
+Tests:       72 passed, 72 total
+Time:        13.4 s
 ```
 
-**Hedef %80'in üzerinde**: Statements %95.96, Branches %86.36, Functions
-%97.5, Lines %95.91. `package.json` içindeki `jest.coverageThreshold`
+**Hedef %80'in üzerinde**: Statements %95.79, Branches %87.5, Functions
+%97.87, Lines %95.75. `package.json` içindeki `jest.coverageThreshold`
 ayarı (80/70/80/80) `npm run test:coverage` komutunu, eşiklerin altına
 düşülmesi durumunda başarısız (exit code ≠ 0) yapacak şekilde
 yapılandırılmıştır. `logger.js`'in kapsanmamış dalları, yalnızca

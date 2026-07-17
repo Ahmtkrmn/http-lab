@@ -4,6 +4,11 @@ require('dotenv').config({ quiet: true });
 // Import Express framework
 const express = require('express');
 
+// Week 9: CORS (tarayıcıdan gelen cross-origin isteklere izin) ve
+// cookie-parser (httpOnly refresh token cookie'sini req.cookies'e açar)
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+
 // Import our custom middlewares
 const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
@@ -12,6 +17,7 @@ const metricsAccessGuard = require('./middleware/metricsAccessGuard');
 // Import our route definitions
 const itemsRouter = require('./routes/items');
 const authRouter = require('./routes/auth');
+const categoriesRouter = require('./routes/categories');
 
 // Health check bağımlılıkları: DB canlılığını ölçmek için paylaşılan Prisma
 // client'ı, response'a versiyon bilgisini eklemek için package.json'u kullanıyoruz.
@@ -43,13 +49,44 @@ app.use(express.json());
 // satırında (metrics guard'ının reddi dahil) requestId hazır olsun.
 app.use(requestLogger);
 
-// 2b. Metrics Middleware: Her isteğin süresini/sayısını ölç. Route'lardan ÖNCE
+// 2b. CORS Middleware (Week 9): Tarayıcılar, bir sayfanın (origin:
+// http://localhost:5173) FARKLI bir origin'e (http://localhost:3000) yaptığı
+// istekleri Same-Origin Policy gereği varsayılan olarak BLOKLAR. Sunucu
+// "bu origin'e izin veriyorum" header'larını (Access-Control-Allow-Origin)
+// dönmedikçe tarayıcı yanıtı frontend koduna vermez.
+//
+// KASITLI TASARIM: FRONTEND_URL env'i set edilmemişse CORS middleware'i hiç
+// takılmaz -> tarayıcıda CORS hatasını canlı gözlemleyebilirsin (TODO.md
+// Week 9 "CORS'u Kasıtlı Olarak Kır ve Çöz" alıştırması). Düzeltmek için
+// .env'e FRONTEND_URL=http://localhost:5173 ekle.
+//
+// credentials: true -> Access-Control-Allow-Credentials: true header'ını
+// ekler. Frontend'in fetch'i de credentials: 'include' demedikçe cookie'ler
+// cross-origin isteklerde TAŞINMAZ; ikisi birden gerekir (detay README'de).
+// Bu moddayken origin '*' OLAMAZ — tarayıcı, kimlikli isteklerde joker
+// origin'i güvenlik gereği reddeder; o yüzden origin'i tek tek belirtiyoruz.
+//
+// Sıralama notu: cors'u metricsMiddleware'den ÖNCE takıyoruz ki tarayıcının
+// otomatik gönderdiği OPTIONS "preflight" istekleri (cors bunları burada
+// yanıtlayıp bitirir) metriklere gürültü olarak yansımasın; requestLogger'dan
+// SONRA takıyoruz ki preflight'lar yine de loglansın.
+if (process.env.FRONTEND_URL) {
+  app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+}
+
+// 2c. Cookie Parser: 'Cookie' header'ındaki ham string'i parse edip
+// req.cookies objesine çevirir. /api/auth/refresh ve /logout, httpOnly
+// refresh token cookie'sini buradan okur.
+app.use(cookieParser());
+
+// 2d. Metrics Middleware: Her isteğin süresini/sayısını ölç. Route'lardan ÖNCE
 // takılır ki hiçbir isteği kaçırmasın (bkz. src/metrics/metrics.js).
 app.use(metricsMiddleware);
 
 // 3. Route Handlers: Mount the items router to the '/api/items' path
 app.use('/api/items', itemsRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/categories', categoriesRouter);
 
 // 4. Health Check Endpoint: CI/CD smoke test'i ve UptimeRobot gibi
 // izleme araçları bu uç noktayı periyodik olarak yoklayacak (bkz. TODO.md

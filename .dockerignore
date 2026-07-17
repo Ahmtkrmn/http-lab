@@ -6,3 +6,6 @@ npm-debug.log
 tests
 README.md
 REFACTORING_DIARY.md
+# Week 9: backend imajinin client kaynagina ihtiyaci yok; client/node_modules
+# build context'ine girerse her 'docker build' yuzlerce MB'i bosuna tasir.
+client

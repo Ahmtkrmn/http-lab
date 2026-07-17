@@ -33,29 +33,50 @@ Bu projeyi bitirdiğimde elimde şunlar olacak:
 
 ---
 
-### ▶️ KALDIĞIMIZ YER (2026-07-16 — projeye dönünce buradan devam et)
+### ▶️ KALDIĞIMIZ YER (2026-07-17 — projeye dönünce buradan devam et)
 
-**Şu ana kadar TAMAM olan:**
-- ✅ Structured logging (pino) + requestId + metrics (prom-client) kodu yazıldı, test edildi (59 test), `main`'e push edildi.
-- ✅ Render redeploy oldu; canlı `/metrics` **200 dönüyor** (`https://http-lab.onrender.com/metrics`).
-- ✅ `/metrics` güvenliği: Render'da `METRICS_TOKEN` env'i ayarlandı. Doğrulandı → token'sız **403**, doğru token'la **200**.
-- ✅ `monitoring/` klasörü hazır: `config.alloy`, `docker-compose.monitoring.yml`, `.env.monitoring.example`, `grafana-dashboard.json` (4 panel), `generate-traffic.sh`, `README.md` (adım-adım rehber).
+**Week 8 tamamen kapandı** (Grafana Cloud dashboard + UptimeRobot + `monitoring/`
+commit'i dahil). **Week 9'un KOD tarafı bitti**: `client/` (Vite + React +
+Tailwind v4) yazıldı, backend'e cookie tabanlı refresh akışı (`/refresh`,
+`/logout`, rotation) + CORS + `GET /api/categories` eklendi, 72 test yeşil,
+compose'a Nginx'li `client` servisi eklendi (detay: `LEARNING_LOG.md` Adım 6).
 
-**🔜 SIRADAKİ ADIM — Grafana Cloud'a bağlan (detaylı rehber: `monitoring/README.md`):**
+**Dokümantasyon güncellendi**: `software.md`'ye frontend'i kapsayan 6 yeni
+bölüm (14-19 — Vite/React nasıl çalışıyor, tarayıcıdan backend'e TAM istek
+yolculuğu, CORS + token güvenliği, Docker/Nginx) eklendi; ayrıca React/JSX/
+component/state/hook/routing kavramlarını sıfırdan anlatan yeni bir
+`frontend.md` oluşturuldu (`nodejs.md`'nin frontend karşılığı — detay:
+`LEARNING_LOG.md` Adım 7). "Front-end nasıl back-end ile bağlı, uygulamam
+nasıl çalışıyor?" sorusunun cevabı artık bu iki dosyada.
 
-1. [x] **Grafana Cloud hesabı aç** (grafana.com, ücretsiz). Prometheus remote_write için 3 değeri al:
-       Remote Write Endpoint URL'i (`…/api/prom/push`), Username/Instance ID (sayı), API Token (`metrics:write`).
-2. [x] `cd monitoring && cp .env.monitoring.example .env.monitoring` → içini doldur:
-       - `SCRAPE_TARGET=http-lab.onrender.com:443`
-       - `METRICS_TOKEN=` → **Render'daki env'in AYNISI** (Render Dashboard → http-lab → Environment'tan kopyala; buraya/commit'e yazma!)
-       - `GRAFANA_CLOUD_PROM_URL`, `GRAFANA_CLOUD_USER`, `GRAFANA_CLOUD_API_KEY` → adım 1'deki 3 değer.
-3. [x] Alloy'u başlat: `docker compose -f monitoring/docker-compose.monitoring.yml up` → arayüz: http://localhost:12345 (target UP mı?).
-4. [x] Grafana Cloud → **Explore** → `http_requests_total` sorgusu veri dönüyor mu? (boru hattı doğrulaması)
-5. [x] `bash monitoring/generate-traffic.sh` ile canlıya trafik üret (paneller dolsun).
-6. [x] Grafana → **Dashboards → Import** → `monitoring/grafana-dashboard.json` yükle, Prometheus data source'u seç.
-7. [x] Dashboard ekran görüntüsü → `docs/grafana_dashboard.png` → ana `README.md`'ye eklendi.
-8. [x] **UptimeRobot**: `/health` için 5 dk'lık HTTP monitörü + e-posta alert kur (2 dk yanıt yoksa bildirim).
-9. [ ] `monitoring/` dosyalarını commit et (`.env.monitoring` hariç — gitignore'lı).
+**🔜 SIRADAKİ ADIM — Week 9'un tarayıcı/panel gerektiren kısımları (senin aksiyonun):**
+
+1. [ ] **CORS'u canlı gözlemle**: `.env`'de `FRONTEND_URL` satırı KAPALIYKEN
+       `docker compose up --build` → http://localhost:5173 aç → login dene →
+       Console'daki CORS hatasının ekran görüntüsünü al.
+2. [ ] `.env`'de `FRONTEND_URL=http://localhost:5173` satırını aç → `docker
+       compose up -d app` (yeniden başlat) → login'in çalıştığını gör; DevTools
+       → Network'te `Access-Control-Allow-*` header'larını incele (hatalı ve
+       düzgün hallerini karşılaştır). Demo kullanıcı: `demo@http-lab.dev` /
+       `Demo1234!` (EDITOR — form görünür).
+3. [ ] **Vercel/Netlify deploy**: Root Directory `client`, env
+       `VITE_API_URL=https://http-lab.onrender.com`; Render tarafına
+       `FRONTEND_URL=https://<proje>.vercel.app` ekle (adımlar: README →
+       "Frontend & Full-Stack" → Deploy).
+4. [ ] Week 9 değişikliklerini commit/push et (branch: `feature/week8-observability`
+       yerine yeni bir `feature/week9-frontend` branch'i önerilir).
+
+**Eski Week 8 kurulum adımları (hepsi tamam):**
+
+1. [x] Grafana Cloud hesabı + remote_write değerleri
+2. [x] `monitoring/.env.monitoring` dolduruldu
+3. [x] Alloy başlatıldı (target UP)
+4. [x] Explore'da `http_requests_total` doğrulandı
+5. [x] `generate-traffic.sh` ile trafik üretildi
+6. [x] Dashboard import edildi (4 panel)
+7. [x] Ekran görüntüsü `docs/grafana_dashboard.png` → README
+8. [x] UptimeRobot `/health` monitörü + e-posta alert
+9. [x] `monitoring/` dosyaları commit edildi (`.env.monitoring` hariç — gitignore'lı)
 
 (1-7 detayı: bkz. `LEARNING_LOG.md` → Adım 5, madde 6 "Grafana Cloud'a uçtan uca bağlantı")
 
@@ -99,7 +120,7 @@ README'ye yazıldı. Kalan adımlar bir panel/hesap kurulumudur (dosyayla yapıl
 
 - [x] README'ye "Monitoring & Alerting" bölümü ekle — Grafana + UptimeRobot adım-adım rehberi eklendi
 - [x] UptimeRobot ücretsiz plan ile `/health` endpoint'ini izle (5 dakikada bir ping)
-- [ ] E-posta alertini ayarla: servis 2 dakika yanıt vermezse bildirim gelsin
+- [x] E-posta alertini ayarla: servis 2 dakika yanıt vermezse bildirim gelsin — UptimeRobot alert contact ile kuruldu (bkz. `LEARNING_LOG.md` Adım 5/7)
 
 ---
 
@@ -109,34 +130,34 @@ README'ye yazıldı. Kalan adımlar bir panel/hesap kurulumudur (dosyayla yapıl
 
 ### Proje Kurulumu
 
-- [ ] Aynı repo'da `client/` klasörü aç: `npm create vite@latest client -- --template react`
-- [ ] Tailwind CSS kur (sade görünüm yeterli, fancy UI değil)
-- [ ] `client/src/api/` klasörü oluştur — tüm fetch çağrıları burada, component'larda `fetch` yok
-- [ ] `client/.env.local` ile `VITE_API_URL=http://localhost:3000` tanımla
+- [x] Aynı repo'da `client/` klasörü aç: `npm create vite@latest client -- --template react` — React 19 + Vite 8 (bkz. `LEARNING_LOG.md` Adım 6)
+- [x] Tailwind CSS kur (sade görünüm yeterli, fancy UI değil) — Tailwind v4, `@theme` token'ları `client/src/index.css`'te
+- [x] `client/src/api/` klasörü oluştur — tüm fetch çağrıları burada, component'larda `fetch` yok — `http.js` (tek kapı) + `auth/items/categories.js`
+- [x] `client/.env.local` ile `VITE_API_URL=http://localhost:3000` tanımla — `.env.example` da eklendi (gitignore: `*.local`)
 
 ### CORS'u Kasıtlı Olarak Kır ve Çöz
 
-- [ ] Frontend `:5173`'ten, backend `:3000`'den çalışsın
-- [ ] Browser'da CORS hatasını gözlemle ve ekran görüntüsü al
-- [ ] Backend'e `cors` paketi kur: `npm install cors`
-- [ ] `app.js`'e `cors({ origin: process.env.FRONTEND_URL, credentials: true })` ekle
-- [ ] Hem hatalı hem düzgün CORS yanıtlarının header'larını incele (DevTools → Network)
-- [ ] `credentials: true` ile `withCredentials: true`'nun birlikte neden gerekli olduğunu README'ye yaz
+- [x] Frontend `:5173`'ten, backend `:3000`'den çalışsın — dev'de `npm run dev`, compose'da Nginx `5173:80`
+- [ ] Browser'da CORS hatasını gözlemle ve ekran görüntüsü al — ⚠️ SENİN AKSİYONUN (`.env`'de `FRONTEND_URL` kapalıyken dene; bkz. "KALDIĞIMIZ YER")
+- [x] Backend'e `cors` paketi kur: `npm install cors`
+- [x] `app.js`'e `cors({ origin: process.env.FRONTEND_URL, credentials: true })` ekle — `FRONTEND_URL` set değilse bilinçli olarak takılmıyor ("kır ve çöz" alıştırması env toggle'ı oldu); preflight davranışı `cors.integration.test.js` ile test altında
+- [ ] Hem hatalı hem düzgün CORS yanıtlarının header'larını incele (DevTools → Network) — ⚠️ SENİN AKSİYONUN
+- [x] `credentials: true` ile `withCredentials: true`'nun birlikte neden gerekli olduğunu README'ye yaz — README → "Frontend & Full-Stack" → credentials bölümü
 
 ### Implement Edilecekler (Sırasıyla)
 
-- [ ] **Login sayfası:** Email + şifre form, JWT access token'ı `memory`'de sakla (localStorage değil), refresh token'ı `httpOnly cookie`'de tut
-- [ ] **Korumalı route:** Giriş yapmamış kullanıcı `/items`'a gitmeye çalışırsa `/login`'e yönlendir
-- [ ] **Items listesi:** `GET /api/items` ile verileri çek, basit tablo görünümü
-- [ ] **Yeni item formu:** Sadece `EDITOR` veya `ADMIN` rolündeki kullanıcıya görünsün
-- [ ] **Error handling:** 401 → login sayfasına yönlendir, 403 → "Yetkiniz yok" mesajı, network error → anlamlı hata göster
-- [ ] **Logout:** Access token'ı memory'den sil, refresh token invalidate etmek için backend'e istek at
+- [x] **Login sayfası:** Email + şifre form, JWT access token'ı `memory`'de sakla (localStorage değil), refresh token'ı `httpOnly cookie`'de tut — backend'e `/refresh` (rotation'lı) + `/logout` eklendi; access token `tokenStore.js`'te (RAM)
+- [x] **Korumalı route:** Giriş yapmamış kullanıcı `/items`'a gitmeye çalışırsa `/login`'e yönlendir — `ProtectedRoute.jsx`, üç durumlu (`loading/authenticated/anonymous`)
+- [x] **Items listesi:** `GET /api/items` ile verileri çek, basit tablo görünümü — skeleton loading + boş durum dahil
+- [x] **Yeni item formu:** Sadece `EDITOR` veya `ADMIN` rolündeki kullanıcıya görünsün — kategori dropdown'ı için backend'e `GET /api/categories` eklendi
+- [x] **Error handling:** 401 → login sayfasına yönlendir, 403 → "Yetkiniz yok" mesajı, network error → anlamlı hata göster — 401 merkezi (silent refresh + retry, `http.js`); NOT: bunun için `authMiddleware` süresi dolmuş token'a artık 403 değil **401** dönüyor (bkz. `LEARNING_LOG.md` Adım 6/3)
+- [x] **Logout:** Access token'ı memory'den sil, refresh token invalidate etmek için backend'e istek at — invalidation DB'de (`refreshToken=NULL`), cookie temizleniyor
 
 ### docker-compose Güncellemesi
 
-- [ ] `docker-compose.yml`'e `client` servisi ekle (Nginx ile static file serve)
-- [ ] `docker compose up` ile üç servisin (app + db + client) birlikte çalıştığını doğrula
-- [ ] Frontend Vercel veya Netlify'a deploy et, backend URL'ini environment variable'dan al
+- [x] `docker-compose.yml`'e `client` servisi ekle (Nginx ile static file serve) — multi-stage `client/Dockerfile` + SPA fallback'li `nginx.conf`
+- [x] `docker compose up` ile üç servisin (app + db + client) birlikte çalıştığını doğrula — curl ile uçtan uca doğrulandı: `/health` 200, login→refresh→logout cookie akışı, SPA fallback (`/items` → 200)
+- [ ] Frontend Vercel veya Netlify'a deploy et, backend URL'ini environment variable'dan al — ⚠️ SENİN AKSİYONUN (adımlar README'de; Render'a `FRONTEND_URL` eklemeyi unutma)
 
 ---
 
@@ -238,8 +259,8 @@ Bu maddeler haftalık değil ama projeyi büyüttükçe birikirse sonra yazmak z
 | 5 | Testing & Clean Code | ✅ Tamamlandı (%94 coverage) |
 | 6 | Docker | ✅ Tamamlandı (multi-stage build) |
 | 7 | CI/CD & Deployment | ✅ Tamamlandı |
-| 8 | Monitoring & Logging | ✅ Tamamlandı (logging + metrics + testler + Grafana Cloud dashboard + UptimeRobot; sadece `monitoring/` klasörünün commit'i kaldı) |
-| 9 | Frontend & Full-Stack | 🔲 |
+| 8 | Monitoring & Logging | ✅ Tamamlandı (logging + metrics + testler + Grafana Cloud dashboard + UptimeRobot + `monitoring/` commit'i) |
+| 9 | Frontend & Full-Stack | 🟡 Kod tamam (client + cookie auth + CORS + compose; 72 test). Kalan senin aksiyonların: CORS gözlemi/screenshot, Vercel deploy, commit |
 | 10 | AI/RAG (Portfolio #3) | 🔲 |
 
 ---

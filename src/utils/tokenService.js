@@ -13,6 +13,7 @@
 // olmadan doğrudan unit test edilebilir.
 
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY = '7d';
@@ -26,8 +27,14 @@ function generateAccessToken(payload, secret = process.env.JWT_ACCESS_SECRET) {
 }
 
 function generateRefreshToken(payload, secret = process.env.JWT_REFRESH_SECRET) {
+  // jti (JWT ID) — Week 9 token rotation için kritik detay: JWT'nin iat/exp
+  // claim'leri SANİYE hassasiyetindedir. jti olmasaydı, aynı saniye içinde
+  // aynı kullanıcı için üretilen iki refresh token bayt-bayt AYNI string
+  // olurdu — "rotation" (her /refresh çağrısında eski token'ı geçersiz kılıp
+  // yenisini vermek) hiçbir şey döndürmemiş olurdu. jti her token'ı garanti
+  // benzersiz yapar.
   return jwt.sign(
-    { userId: payload.userId },
+    { userId: payload.userId, jti: crypto.randomUUID() },
     secret,
     { expiresIn: REFRESH_TOKEN_EXPIRY }
   );

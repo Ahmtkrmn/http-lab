@@ -1,0 +1,7 @@
+# Build context'ine girmesin: bagimliliklar imaj icinde npm ci ile kurulur,
+# host'taki node_modules (isletim sistemine ozgu binary'ler icerebilir) kopyalanmamali.
+node_modules
+dist
+# .env.local gizli olmasa da (VITE_ degerleri zaten bundle'a gomulur) makineye
+# ozeldir; imaj build'i API adresini docker-compose'daki build ARG'indan alir.
+.env.local

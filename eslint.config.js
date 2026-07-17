@@ -47,7 +47,10 @@ module.exports = [
     },
   },
   {
-    // ESLint'in taramaması gereken dizinler.
-    ignores: ['node_modules/**', 'coverage/**', 'prisma/migrations/**'],
+    // ESLint'in taramaması gereken dizinler. client/ da burada: frontend'in
+    // kendi lint kurulumu var (Vite şablonuyla gelen oxlint, JSX'i anlar);
+    // kök ESLint CommonJS/Node ayarlı olduğundan client'ı taraması hem
+    // gereksiz hem de yanlış pozitif üretir. Client lint: `cd client && npm run lint`.
+    ignores: ['node_modules/**', 'coverage/**', 'prisma/migrations/**', 'client/**'],
   },
 ];

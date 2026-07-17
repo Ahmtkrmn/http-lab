@@ -36,24 +36,44 @@ push to GitHub on your own initiative. Do stage/commit locally only if asked.
   all parallel) + CD (Render deploy hook + smoke test) are live and green.
   App is deployed at **https://http-lab.onrender.com** (verify with `curl
   https://http-lab.onrender.com/health`).
-- **Week 8 (Monitoring/Logging/Observability): 🟡 code done, external setup
-  pending.** Structured logging (`pino`, JSON in prod / pino-pretty in dev,
-  `LOG_LEVEL`), per-request `requestId` (`X-Request-ID`, preserved if
-  incoming) via a pino child logger on `req.log`; `console.*` fully removed
-  from `server.js`/`requestLogger.js`/`errorHandler.js`. Prometheus metrics
-  (`prom-client`) at `GET /metrics`: `http_requests_total` (Counter),
-  `http_request_duration_seconds` (Histogram), `active_db_connections`
-  (Gauge, reads pg Pool via new `getPool()` in `src/db/prisma.js`). Metrics
-  middleware runs before all routes and **skips `/metrics`** itself; `route`
-  label uses the **route pattern** (`req.baseUrl + req.route.path`), not the
-  raw path — 404s collapse to `unmatched` (cardinality guard). `/metrics` is
-  gated by `src/middleware/metricsAccessGuard.js`: `METRICS_TOKEN` bearer
-  (preferred, PaaS-safe) OR IP allowlist (loopback/private + `METRICS_ALLOWED_IPS`).
-  59 tests, coverage ~96/86/98/96. **Still user's action (not file-doable):**
-  Grafana Cloud account + Alloy/Agent scrape→remote_write + 3-panel dashboard
-  + screenshot; UptimeRobot `/health` monitor + email alert. Step-by-step
-  guides are in `README.md` → "Monitoring, Logging & Observability".
-- Weeks 9–10 (Frontend/full-stack, AI/RAG portfolio #3) not started.
+- **Week 8 (Monitoring/Logging/Observability): ✅ done.** Structured logging
+  (`pino`, JSON in prod / pino-pretty in dev, `LOG_LEVEL`), per-request
+  `requestId` (`X-Request-ID`) via pino child logger on `req.log`. Prometheus
+  metrics (`prom-client`) at `GET /metrics` (Counter/Histogram/Gauge; `route`
+  label uses the **route pattern**, 404s collapse to `unmatched` — cardinality
+  guard), gated by `metricsAccessGuard` (`METRICS_TOKEN` bearer preferred, or
+  IP allowlist). Grafana Cloud dashboard (Alloy scrape→remote_write, 4 panels,
+  screenshot in `docs/`) and UptimeRobot `/health` monitor + email alert are
+  live; `monitoring/` folder is committed.
+- **Week 9 (Frontend & Full-Stack): 🟡 code done, user actions pending.**
+  `client/` = Vite 8 + React 19 + Tailwind **v4** (`@theme` tokens in
+  `src/index.css`, no tailwind.config) + React Router 7 + Phosphor icons;
+  lints with **oxlint** (`cd client && npm run lint`), root ESLint ignores
+  `client/**`. All fetches go through `client/src/api/http.js` (base URL from
+  `VITE_API_URL`, Bearer header, `credentials: 'include'`, 401 → shared
+  silent-refresh promise → single retry; errors normalized to `ApiError`
+  {status, kind}). Access token lives **in memory only**
+  (`client/src/auth/tokenStore.js`); session restored on load via
+  `POST /api/auth/refresh`. Backend changes: refresh token moved to an
+  **httpOnly cookie** (`Path=/api/auth`, `SameSite=Lax` dev / `None`+`Secure`
+  prod) — login body no longer contains it (returns `accessToken` + `user`);
+  new `POST /api/auth/refresh` (with **rotation** — `jti` claim added to
+  refresh tokens so same-second tokens differ) and `POST /api/auth/logout`
+  (DB `refreshToken=NULL`, idempotent 204); **invalid/expired access tokens
+  now return 401, not 403** (401=re-authenticate, 403=role/ownership only —
+  deliberate contract change, frontend depends on it); new
+  `GET /api/categories` (+ `categoriesDb` store) for the item form dropdown;
+  CORS is **conditional**: only mounted when `FRONTEND_URL` env is set
+  (unset = intentionally "broken" for the TODO's observe-the-CORS-error
+  exercise; commented line ready in `.env`). `docker-compose.yml` has a
+  `client` service (multi-stage Node build → nginx:alpine, SPA fallback,
+  port 5173:80; `VITE_API_URL` is a **build arg** and must be a host-reachable
+  URL, not the `app` service name — the browser makes the calls). 72 tests.
+  Demo user in dev DB: `demo@http-lab.dev` / `Demo1234!` (EDITOR).
+  **Still user's action:** observe/screenshot the CORS error then enable
+  `FRONTEND_URL`, deploy client to Vercel/Netlify (root dir `client`,
+  `VITE_API_URL` env; add `FRONTEND_URL` on Render), commit/push.
+- Week 10 (AI/RAG portfolio #3) not started.
 
 Known still-open item from Week 7: GitHub branch protection on `main` exists
 (requires PR) but does **not** yet enforce required status checks, and repo
@@ -83,6 +103,13 @@ npx prisma migrate deploy
 npx prisma studio
 
 docker compose up --build # canonical way to run the FULL stack locally (see below)
+
+# frontend (client/ — Week 9): separate package, own lockfile
+cd client
+npm install
+npm run dev               # Vite dev server, http://localhost:5173
+npm run build             # production build (also the quickest JSX sanity check)
+npm run lint              # oxlint (NOT eslint; root eslint ignores client/)
 ```
 
 Tests run against a **real PostgreSQL database**, never mocks for the
